@@ -1,0 +1,80 @@
+<app-page-header
+  title="Content planner"
+  subtitle="Plan posts across platforms (mock)."
+/>
+
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <mat-button-toggle-group
+    [value]="store.view()"
+    (valueChange)="store.setView($event)"
+    aria-label="Planner view"
+  >
+    <mat-button-toggle value="list">List</mat-button-toggle>
+    <mat-button-toggle value="calendar" disabled>Calendar (soon)</mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <div class="flex items-center gap-2">
+    <button mat-stroked-button (click)="store.addMockItem()">Add item</button>
+  </div>
+</div>
+
+<div class="grid gap-4 lg:grid-cols-4">
+  <mat-card class="app-card lg:col-span-3">
+    <div class="p-4">
+      <div class="mb-3 text-sm font-semibold text-slate-900">Upcoming</div>
+
+      <div class="grid gap-2">
+        @for (item of store.items(); track item.id) {
+          <div class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
+              <div class="text-xs text-slate-500">{{ item.date | date }}</div>
+              <div class="truncate text-sm font-medium text-slate-900">
+                {{ item.title }}
+              </div>
+              <div class="mt-1 text-xs text-slate-500">{{ item.platform }}</div>
+            </div>
+            <mat-chip-set>
+              <mat-chip>{{ item.status }}</mat-chip>
+            </mat-chip-set>
+          </div>
+        }
+      </div>
+    </div>
+  </mat-card>
+
+  @defer (on idle) {
+    <mat-card class="app-card">
+      <div class="p-4">
+        <div class="text-sm font-semibold text-slate-900">Status</div>
+        <div class="mt-3 grid gap-2 text-sm text-slate-700">
+          <div class="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+            <span>Draft</span>
+            <span class="tabular-nums">{{ store.countsByStatus().Draft }}</span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+            <span>Ready</span>
+            <span class="tabular-nums">{{ store.countsByStatus().Ready }}</span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+            <span>Scheduled</span>
+            <span class="tabular-nums">{{ store.countsByStatus().Scheduled }}</span>
+          </div>
+          <div class="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+            <span>Posted</span>
+            <span class="tabular-nums">{{ store.countsByStatus().Posted }}</span>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+  } @placeholder {
+    <mat-card class="app-card">
+      <div class="p-4 space-y-3">
+        <div class="h-4 w-16 rounded bg-slate-100 animate-pulse"></div>
+        @for (_ of [1,2,3,4]; track $index) {
+          <div class="h-10 w-full rounded bg-slate-50 animate-pulse"></div>
+        }
+      </div>
+    </mat-card>
+  }
+</div>
+

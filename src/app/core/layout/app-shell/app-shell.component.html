@@ -1,0 +1,73 @@
+<mat-sidenav-container class="h-dvh app-shell-body">
+  <mat-sidenav
+    #drawer
+    class="w-[280px] border-r border-slate-200"
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="sidenavOpened()"
+  >
+    <div class="px-4 py-4">
+      <div class="flex items-center gap-3">
+        <div
+          class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-500 text-white"
+        >
+          <mat-icon class="!text-[20px]">sports_tennis</mat-icon>
+        </div>
+        <div class="leading-tight">
+          <div class="text-sm font-semibold text-slate-900">Padel Planner</div>
+          <div class="text-xs text-slate-500">AI content workspace</div>
+        </div>
+      </div>
+    </div>
+
+    <mat-nav-list class="px-2">
+      @for (item of navItems; track item.route) {
+        <a
+          mat-list-item
+          [routerLink]="item.route"
+          routerLinkActive="bg-slate-100"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="rounded-lg"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle class="text-sm">{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+
+    <div class="mt-auto px-4 py-4 text-xs text-slate-500">
+      Mock data · Signals · Standalone
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="bg-transparent">
+    <mat-toolbar class="sticky top-0 z-10 !bg-white/80 !backdrop-blur supports-[backdrop-filter]:backdrop-blur-md !text-slate-900 border-b border-slate-100">
+      <button
+        mat-icon-button
+        class="mr-2"
+        [class.hidden]="!isHandset()"
+        (click)="drawer.toggle()"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <span class="text-sm font-semibold">Content Planner</span>
+      <span class="flex-1"></span>
+
+      <button mat-stroked-button class="hidden sm:inline-flex">
+        <mat-icon class="mr-2">add</mat-icon>
+        New idea
+      </button>
+      <button mat-icon-button class="ml-2" aria-label="Notifications">
+        <mat-icon>notifications</mat-icon>
+      </button>
+      <button mat-icon-button aria-label="Profile">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <div class="mx-auto w-full max-w-6xl p-4 sm:p-6">
+      <router-outlet />
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+

@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Status {
+  IDEA
+  RECORDED
+  PUBLISHED
+}
+
+model Video {
+  id          Int      @id @default(autoincrement())
+  title       String
+  platform    String
+  views       Int
+  likes       Int
+  duration    Int
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model Idea {
+  id          Int      @id @default(autoincrement())
+  topic       String
+  hook        String
+  description String
+  viralReason String
+  createdAt   DateTime @default(now())
+}
+
+model PlannerItem {
+  id            Int      @id @default(autoincrement())
+  title         String
+  status        Status
+  scheduledDate DateTime
+}
