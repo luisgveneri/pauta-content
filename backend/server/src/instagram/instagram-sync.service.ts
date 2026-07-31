@@ -3,13 +3,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { GraphApiError, InstagramApiService } from './instagram-api.service';
 import { decryptToken, encryptToken } from './token-crypto';
 
-const OAUTH_SCOPES = [
-  'instagram_basic',
-  'instagram_manage_insights',
-  'pages_show_list',
-  'pages_read_engagement',
-  'business_management',
-].join(',');
+// business_management deliberately excluded — it's not enabled for this app
+// in the Meta dashboard (Invalid Scopes error), and isn't strictly needed:
+// the manual pageId override in resolvePage() already covers Business
+// Portfolio-owned Pages without it.
+const OAUTH_SCOPES = ['instagram_basic', 'instagram_manage_insights', 'pages_show_list', 'pages_read_engagement'].join(
+  ',',
+);
 
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
