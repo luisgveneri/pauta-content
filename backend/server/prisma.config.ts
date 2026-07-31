@@ -8,7 +8,12 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
+  // Used by CLI commands (migrate, introspect, studio) — the app itself never
+  // reads this, PrismaService builds its own adapter from DATABASE_URL
+  // directly. Points at the DIRECT (non-pooled) connection because `migrate`
+  // needs advisory locks / prepared statements a transaction-mode pooler
+  // doesn't support.
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env["DIRECT_URL"],
   },
 });
