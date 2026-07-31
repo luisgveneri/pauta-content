@@ -174,7 +174,19 @@ export class InstagramSyncService {
       return this.api.getPage(pageId.trim(), token);
     }
     const pages = await this.api.listPages(token);
-    return pages.find((p) => p.instagram_business_account);
+    const page = pages.find((p) => p.instagram_business_account);
+    if (page) return page;
+
+    // `/me/accounts` comes back empty for Business-Portfolio-owned Pages even
+    // when the token can access them directly by id — the manual-paste flow
+    // covers this with an optional pageId field, but the OAuth redirect flow
+    // has no step where the user could supply one. FACEBOOK_PAGE_ID is a
+    // last-resort fallback for exactly that case (single known Page for now).
+    const fallbackPageId = process.env.FACEBOOK_PAGE_ID;
+    if (fallbackPageId) {
+      return this.api.getPage(fallbackPageId.trim(), token);
+    }
+    return undefined;
   }
 
   async sync(organizationId: string) {
