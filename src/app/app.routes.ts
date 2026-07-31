@@ -65,6 +65,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/campaigns/campaign-detail.page').then((m) => m.CampaignDetailPage),
       },
+      {
+        path: 'playtomic',
+        canActivate: [clubOnlyGuard],
+        loadComponent: () =>
+          import('./features/playtomic/playtomic.page').then((m) => m.PlaytomicPage),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

@@ -34,5 +34,9 @@ export const apiEndpoints = {
     result: (id: string) => `/api/campaigns/${id}/result`,
     insights: '/api/campaigns/insights',
   },
+  playtomic: {
+    insights: '/api/playtomic/insights',
+    seedMock: '/api/playtomic/mock/seed',
+  },
 } as const;
 

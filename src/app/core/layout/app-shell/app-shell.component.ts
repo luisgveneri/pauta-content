@@ -33,7 +33,10 @@ const BASE_NAV_ITEMS: NavItem[] = [
   { label: 'Instagram', icon: 'photo_camera', route: '/instagram' },
 ];
 
-const CLUB_NAV_ITEM: NavItem = { label: 'Campaigns', icon: 'campaign', route: '/campaigns' };
+const CLUB_NAV_ITEMS: NavItem[] = [
+  { label: 'Campaigns', icon: 'campaign', route: '/campaigns' },
+  { label: 'Playtomic', icon: 'sports_tennis', route: '/playtomic' },
+];
 
 @Component({
   selector: 'app-shell',
@@ -59,7 +62,7 @@ export class AppShellComponent {
   private readonly userButtonMount = viewChild<ElementRef<HTMLDivElement>>('userButtonMount');
 
   protected readonly navItems = computed<NavItem[]>(() =>
-    this.orgContext.isClub() ? [...BASE_NAV_ITEMS, CLUB_NAV_ITEM] : BASE_NAV_ITEMS,
+    this.orgContext.isClub() ? [...BASE_NAV_ITEMS, ...CLUB_NAV_ITEMS] : BASE_NAV_ITEMS,
   );
 
   protected readonly isHandset = toSignal(

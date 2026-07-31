@@ -30,6 +30,7 @@ model Organization {
   ideas             Idea[]
   plannerItems      PlannerItem[]
   campaigns         Campaign[]
+  bookings          Booking[]
 }
 
 model ViralVideo {
@@ -244,4 +245,27 @@ model InstagramAnalysis {
   createdAt DateTime @default(now())
 
   @@index([accountId, scope, createdAt])
+}
+
+model Booking {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // externalId/courtName/startAt/etc. deliberately mirror Playtomic's real
+  // Bookings API shape (booking_id, resource_name, booking_start_date, ...)
+  // so swapping the mock generator for a real sync later is a data-source
+  // change, not a schema change.
+  externalId        String? // Playtomic booking_id once a real club is connected; null for mock rows
+  courtName         String
+  startAt           DateTime
+  endAt             DateTime
+  priceCents        Int
+  participantsCount Int
+  status            String // "CONFIRMED" | "CANCELED"
+  source            String @default("mock") // "mock" | "playtomic" — never mixed silently
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, startAt])
 }

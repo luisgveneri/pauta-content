@@ -8,6 +8,7 @@ import { IdeasModule } from './ideas/ideas.module';
 import { InstagramModule } from './instagram/instagram.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PlannerModule } from './planner/planner.module';
+import { PlaytomicModule } from './playtomic/playtomic.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PlannerModule } from './planner/planner.module';
     PlannerModule,
     InstagramModule,
     CampaignsModule,
+    PlaytomicModule,
   ],
   controllers: [AppController],
   providers: [AppService],
