@@ -1,5 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
@@ -9,7 +9,15 @@ import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.com
 @Component({
   selector: 'app-content-page',
   standalone: true,
-  imports: [MatCardModule, MatTableModule, MatProgressBarModule, DecimalPipe, DatePipe, PageHeaderComponent],
+  imports: [
+    MatCardModule,
+    MatTableModule,
+    MatProgressBarModule,
+    DecimalPipe,
+    DatePipe,
+    PageHeaderComponent,
+  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './content.page.html',
 })
 export class ContentPage {
@@ -23,4 +31,3 @@ export class ContentPage {
     'createdAt',
   ] as const;
 }
-

@@ -1,17 +1,16 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreatePlannerItemDto } from './dto/create-planner-item.dto';
 
 @Injectable()
 export class PlannerService {
-  // TODO: Replace in-memory store with Prisma persistence
-  private readonly items: CreatePlannerItemDto[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.items;
+  findAll(organizationId: string) {
+    return this.prisma.plannerItem.findMany({ where: { organizationId }, orderBy: { date: 'asc' } });
   }
 
-  create(dto: CreatePlannerItemDto) {
-    this.items.push(dto);
-    return dto;
+  create(organizationId: string, dto: CreatePlannerItemDto) {
+    return this.prisma.plannerItem.create({ data: { ...dto, date: new Date(dto.date), organizationId } });
   }
 }

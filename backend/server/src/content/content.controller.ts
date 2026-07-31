@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
+import { CurrentOrg } from '../auth/current-org.decorator';
 import { ContentService } from './content.service';
 import { CreateViralVideoDto } from './dto/create-viral-video.dto';
 
@@ -7,12 +8,12 @@ export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
   @Get('videos')
-  listViralVideos() {
-    return this.contentService.findAll();
+  listViralVideos(@CurrentOrg() organizationId: string) {
+    return this.contentService.findAll(organizationId);
   }
 
   @Post('videos')
-  createViralVideo(@Body() dto: CreateViralVideoDto) {
-    return this.contentService.create(dto);
+  createViralVideo(@CurrentOrg() organizationId: string, @Body() dto: CreateViralVideoDto) {
+    return this.contentService.create(organizationId, dto);
   }
 }

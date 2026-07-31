@@ -37,10 +37,15 @@ lerna-debug.log*
 
 # dotenv environment variable files
 .env
+.env.*
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
+
+# Secrets / keys
+*.key
+*.pem
 
 # temp directory
 .temp
@@ -56,3 +61,8 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+
+# compiled prisma config (source is prisma.config.ts)
+prisma.config.js
+prisma.config.js.map
+prisma.config.d.ts

@@ -9,7 +9,29 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum OrganizationType {
+  CLUB
+  CREATOR
+}
+
+model Organization {
+  id         String           @id @default(cuid())
+  clerkOrgId String           @unique
+  name       String
+  type       OrganizationType @default(CREATOR)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  instagramAccounts InstagramAccount[]
+  viralVideos       ViralVideo[]
+  ideas             Idea[]
+  plannerItems      PlannerItem[]
+  campaigns         Campaign[]
 }
 
 model ViralVideo {
@@ -21,6 +43,11 @@ model ViralVideo {
   durationSec Int
   description String
   createdAt   DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }
 
 model Idea {
@@ -30,6 +57,11 @@ model Idea {
   description String
   whyViral   String
   createdAt  DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }
 
 model PlannerItem {
@@ -39,4 +71,179 @@ model PlannerItem {
   platform  String
   status    String
   createdAt DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  campaignSlot CampaignContentSlot?
+
+  @@index([organizationId])
+}
+
+enum CampaignObjective {
+  TOURNAMENT
+  CLINIC
+  TEAM_RECRUITMENT
+  OTHER
+}
+
+enum CampaignSlotPhase {
+  PRE
+  DURING
+  POST
+}
+
+model Campaign {
+  id             String            @id @default(cuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name           String
+  objective      CampaignObjective
+  eventStartDate DateTime
+  eventEndDate   DateTime
+
+  resultValue      Int?
+  resultNotes      String?
+  resultRecordedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contentSlots CampaignContentSlot[]
+
+  @@index([organizationId])
+}
+
+model CampaignContentSlot {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  phase         CampaignSlotPhase
+  label         String
+  scheduledDate DateTime
+
+  plannerItemId String?      @unique
+  plannerItem   PlannerItem? @relation(fields: [plannerItemId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([campaignId])
+}
+
+model InstagramAccount {
+  id              String    @id @default(cuid())
+  igUserId        String    @unique
+  username        String
+  pageId          String?
+  accessTokenEnc  String
+  tokenExpiresAt  DateTime?
+  needsReconnect  Boolean   @default(false)
+  lastSyncedAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  posts     InstagramPost[]
+  snapshots InstagramAccountSnapshot[]
+  analyses  InstagramAnalysis[]
+
+  @@index([organizationId])
+}
+
+model InstagramPost {
+  id               String    @id @default(cuid())
+  accountId        String
+  account          InstagramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  igMediaId        String    @unique
+  caption          String?
+  mediaType        String
+  mediaProductType String?
+  permalink        String
+  mediaUrl         String?
+  thumbnailUrl     String?
+  postedAt         DateTime
+
+  // latest known metrics (denormalized for fast listing/sorting)
+  likeCount         Int  @default(0)
+  commentsCount      Int  @default(0)
+  reach              Int  @default(0)
+  views              Int  @default(0)
+  saved              Int  @default(0)
+  shares             Int  @default(0)
+  totalInteractions  Int  @default(0)
+  avgWatchTimeMs     Int?
+
+  // derived fields computed at sync time, used by performance analysis
+  captionLength Int @default(0)
+  hashtagCount  Int @default(0)
+  postedHour    Int
+  postedDow     Int
+
+  insightsSyncedAt DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  metrics   InstagramPostMetric[]
+  analyses  InstagramAnalysis[]
+
+  @@index([accountId, postedAt])
+}
+
+model InstagramPostMetric {
+  id         String   @id @default(cuid())
+  postId     String
+  post       InstagramPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  capturedAt        DateTime
+  likeCount         Int @default(0)
+  commentsCount     Int @default(0)
+  reach             Int @default(0)
+  views             Int @default(0)
+  saved             Int @default(0)
+  shares            Int @default(0)
+  totalInteractions Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, capturedAt])
+}
+
+model InstagramAccountSnapshot {
+  id        String   @id @default(cuid())
+  accountId String
+  account   InstagramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  capturedAt          DateTime
+  followersCount      Int
+  followsCount        Int
+  mediaCount          Int
+  reachDay            Int?
+  profileViewsDay     Int?
+  accountsEngagedDay  Int?
+
+  createdAt DateTime @default(now())
+
+  @@unique([accountId, capturedAt])
+}
+
+model InstagramAnalysis {
+  id        String   @id @default(cuid())
+  accountId String
+  account   InstagramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  postId String?
+  post   InstagramPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  scope   String // "post" | "account"
+  model   String
+  payload Json
+
+  createdAt DateTime @default(now())
+
+  @@index([accountId, scope, createdAt])
 }

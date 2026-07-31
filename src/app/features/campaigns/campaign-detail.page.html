@@ -1,0 +1,124 @@
+@if (store.detailLoading()) {
+  <mat-card class="app-card">
+    <div class="p-4">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </div>
+  </mat-card>
+} @else if (store.currentCampaign(); as campaign) {
+  <app-page-header
+    [title]="campaign.name"
+    [subtitle]="objectiveLabels[campaign.objective] + ' · ' + (campaign.eventStartDate | date) + ' – ' + (campaign.eventEndDate | date)"
+  />
+
+  <mat-card class="app-card">
+    <div class="p-4">
+      <div class="mb-3 text-sm font-semibold text-slate-900">Slots de contenido</div>
+
+      <div class="space-y-2">
+        @for (slot of campaign.contentSlots; track slot.id) {
+          <div class="rounded-lg border border-slate-200 p-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                  {{ phaseLabels[slot.phase] }}
+                </span>
+                <span class="ml-2 text-sm font-medium text-slate-900">{{ slot.label }}</span>
+                <span class="ml-2 text-xs text-slate-500">{{ slot.scheduledDate | date }}</span>
+              </div>
+
+              @if (slot.plannerItemId) {
+                <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">Confirmado</span>
+              } @else {
+                <div class="flex items-center gap-2">
+                  <mat-form-field appearance="outline" class="w-36">
+                    <input #platformInput matInput value="Instagram" placeholder="Plataforma" />
+                  </mat-form-field>
+                  <button
+                    mat-stroked-button
+                    color="primary"
+                    [disabled]="store.confirmingSlotId() === slot.id"
+                    (click)="confirm(slot, platformInput.value)"
+                  >
+                    {{ store.confirmingSlotId() === slot.id ? 'Confirmando…' : 'Confirmar' }}
+                  </button>
+                </div>
+              }
+            </div>
+
+            @if (slot.plannerItem; as plannerItem) {
+              <div class="mt-2 text-xs text-slate-500">
+                Planner item: {{ plannerItem.title }} · {{ plannerItem.platform }} · {{ plannerItem.status }}
+              </div>
+            }
+
+            @if (store.confirmError() && store.erroredSlotId() === slot.id) {
+              <p class="mt-2 text-xs text-rose-600">{{ store.confirmError() }}</p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </mat-card>
+
+  <mat-card class="app-card mt-4">
+    <div class="p-4">
+      <div class="mb-3 text-sm font-semibold text-slate-900">Resultado real</div>
+
+      @if (!eventFinished(campaign)) {
+        <p class="mb-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-700">
+          El evento aún no ha terminado (termina el {{ campaign.eventEndDate | date }}). Si registras un
+          resultado ahora, podría cambiar más adelante.
+        </p>
+      }
+
+      @if (campaign.resultRecordedAt) {
+        <p class="mb-3 text-sm text-slate-700">
+          Resultado actual: <span class="font-medium">{{ campaign.resultValue }} {{ campaign.unitLabel }}</span>
+          · registrado el {{ campaign.resultRecordedAt | date: 'medium' }}
+          @if (campaign.resultNotes) {
+            <span class="block text-xs text-slate-500">{{ campaign.resultNotes }}</span>
+          }
+        </p>
+      }
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ campaign.unitLabel }}</mat-label>
+          <input
+            #resultValueInput
+            matInput
+            type="number"
+            min="0"
+            [value]="campaign.resultValue ?? ''"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Notas (opcional)</mat-label>
+          <input #resultNotesInput matInput [value]="campaign.resultNotes ?? ''" />
+        </mat-form-field>
+      </div>
+
+      <button
+        mat-flat-button
+        color="primary"
+        class="mt-1"
+        [disabled]="store.savingResult()"
+        (click)="saveResult()"
+      >
+        {{ store.savingResult() ? 'Guardando…' : campaign.resultRecordedAt ? 'Actualizar resultado' : 'Guardar resultado' }}
+      </button>
+
+      @if (store.savingResult()) {
+        <mat-progress-bar mode="indeterminate" class="mt-3"></mat-progress-bar>
+      }
+      @if (store.saveResultError()) {
+        <p class="mt-3 text-sm text-rose-600">{{ store.saveResultError() }}</p>
+      }
+    </div>
+  </mat-card>
+} @else {
+  <mat-card class="app-card">
+    <div class="p-4 text-sm text-slate-400">Campaña no encontrada.</div>
+  </mat-card>
+}

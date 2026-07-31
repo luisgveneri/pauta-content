@@ -1,0 +1,86 @@
+<app-page-header
+  title="Campañas"
+  subtitle="Genera un calendario de contenido a partir de un evento del club."
+/>
+
+<div class="mb-4 flex justify-end">
+  <a mat-stroked-button routerLink="/campaigns/insights">
+    <mat-icon class="mr-2">insights</mat-icon>
+    Ver insights
+  </a>
+</div>
+
+<mat-card class="app-card mb-4">
+  <div class="p-4">
+    <div class="text-sm font-semibold text-slate-900">Nueva campaña</div>
+
+    <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input #nameInput matInput placeholder="Torneo de Otoño" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Objetivo</mat-label>
+        <mat-select [value]="selectedObjective()" (selectionChange)="selectedObjective.set($event.value)">
+          @for (objective of objectives; track objective) {
+            <mat-option [value]="objective">{{ objectiveLabels[objective] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de inicio</mat-label>
+        <input #startDateInput matInput type="date" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de fin (opcional)</mat-label>
+        <input #endDateInput matInput type="date" />
+      </mat-form-field>
+    </div>
+
+    <button mat-flat-button color="primary" class="mt-1" [disabled]="store.creating()" (click)="create()">
+      {{ store.creating() ? 'Creando…' : 'Crear campaña' }}
+    </button>
+
+    @if (store.creating()) {
+      <mat-progress-bar mode="indeterminate" class="mt-3"></mat-progress-bar>
+    }
+    @if (store.createError()) {
+      <p class="mt-3 text-sm text-rose-600">{{ store.createError() }}</p>
+    }
+  </div>
+</mat-card>
+
+<mat-card class="app-card">
+  <div class="p-4">
+    <div class="mb-3 text-sm font-semibold text-slate-900">Campañas</div>
+
+    @if (store.loading()) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    } @else if (store.campaigns().length === 0) {
+      <p class="text-sm text-slate-400">Todavía no hay campañas. Crea la primera arriba.</p>
+    } @else {
+      <div class="space-y-2">
+        @for (campaign of store.campaigns(); track campaign.id) {
+          <a
+            [routerLink]="['/campaigns', campaign.id]"
+            class="block rounded-lg border border-slate-200 p-3 transition hover:border-sky-300 hover:bg-sky-50"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div class="text-sm font-medium text-slate-900">{{ campaign.name }}</div>
+              <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                {{ objectiveLabels[campaign.objective] }}
+              </span>
+            </div>
+            <div class="mt-1 text-xs text-slate-500">
+              {{ campaign.eventStartDate | date }} – {{ campaign.eventEndDate | date }}
+              · {{ campaign.contentSlots.length }} slots
+            </div>
+          </a>
+        }
+      </div>
+    }
+  </div>
+</mat-card>

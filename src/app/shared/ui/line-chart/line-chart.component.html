@@ -1,0 +1,23 @@
+@if (points().length > 1) {
+  <div class="flex items-center justify-between text-xs text-slate-500">
+    <span>{{ first()?.label }}</span>
+    <span>{{ last()?.label }}</span>
+  </div>
+  <svg [attr.viewBox]="viewBox" class="mt-1 h-32 w-full" preserveAspectRatio="none">
+    <polyline
+      [attr.points]="polylinePoints()"
+      fill="none"
+      [attr.stroke]="color()"
+      stroke-width="2"
+      vector-effect="non-scaling-stroke"
+    />
+  </svg>
+  <div class="flex items-center justify-between text-xs text-slate-400">
+    <span>min {{ min() | number }}</span>
+    <span>max {{ max() | number }}</span>
+  </div>
+} @else {
+  <div class="flex h-32 items-center justify-center text-sm text-slate-400">
+    Not enough data yet.
+  </div>
+}

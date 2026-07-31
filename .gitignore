@@ -43,6 +43,10 @@ __screenshots__/
 .env
 .env.*
 
+# Secrets / keys
+*.key
+*.pem
+
 # System files
 .DS_Store
 Thumbs.db

@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
+import { CurrentOrg } from '../auth/current-org.decorator';
 import { CreatePlannerItemDto } from './dto/create-planner-item.dto';
 import { PlannerService } from './planner.service';
 
@@ -7,12 +8,12 @@ export class PlannerController {
   constructor(private readonly plannerService: PlannerService) {}
 
   @Get('items')
-  listItems() {
-    return this.plannerService.findAll();
+  listItems(@CurrentOrg() organizationId: string) {
+    return this.plannerService.findAll(organizationId);
   }
 
   @Post('items')
-  createItem(@Body() dto: CreatePlannerItemDto) {
-    return this.plannerService.create(dto);
+  createItem(@CurrentOrg() organizationId: string, @Body() dto: CreatePlannerItemDto) {
+    return this.plannerService.create(organizationId, dto);
   }
 }

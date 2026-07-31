@@ -1,0 +1,119 @@
+<h2 mat-dialog-title class="!mb-0 flex items-center gap-2">
+  <span>{{ post.mediaType }} · {{ post.postedAt | date: 'medium' }}</span>
+  @if (post.performance?.classification === 'over') {
+    <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-normal text-emerald-700">Over-performer</span>
+  } @else if (post.performance?.classification === 'under') {
+    <span class="rounded-full bg-rose-50 px-2 py-1 text-xs font-normal text-rose-700">Under-performer</span>
+  } @else {
+    <span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-normal text-slate-600">Normal</span>
+  }
+</h2>
+
+<mat-dialog-content class="!max-w-[560px]">
+  <div class="mb-4 flex justify-center">
+    @if ((post.thumbnailUrl || post.mediaUrl) && !imageError()) {
+      <img
+        [src]="post.thumbnailUrl || post.mediaUrl"
+        alt=""
+        class="max-h-[420px] w-auto max-w-full rounded-xl object-contain"
+        (error)="imageError.set(true)"
+      />
+    } @else {
+      <div class="flex h-40 w-full items-center justify-center rounded-xl bg-slate-100">
+        <mat-icon class="text-slate-300">image</mat-icon>
+      </div>
+    }
+  </div>
+
+  @if (post.caption) {
+    <p class="mb-4 whitespace-pre-line text-sm text-slate-600">{{ post.caption }}</p>
+  }
+
+  <div class="mb-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
+    <div>
+      <div class="text-xs text-slate-500">Reach</div>
+      <div class="text-sm font-semibold text-slate-900">{{ post.reach | number }}</div>
+    </div>
+    <div>
+      <div class="text-xs text-slate-500">Views</div>
+      <div class="text-sm font-semibold text-slate-900">{{ post.views | number }}</div>
+    </div>
+    <div>
+      <div class="text-xs text-slate-500">Interactions</div>
+      <div class="text-sm font-semibold text-slate-900">{{ post.totalInteractions | number }}</div>
+    </div>
+    <div>
+      <div class="text-xs text-slate-500">Engagement rate</div>
+      <div class="text-sm font-semibold text-slate-900">
+        {{ post.performance?.engagementRate ?? 0 | percent: '1.1-1' }}
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-4 border-t border-slate-100 pt-4">
+    <div class="mb-2 flex items-center justify-between gap-2">
+      <div class="text-sm font-semibold text-slate-900">AI analysis</div>
+      <button mat-stroked-button color="primary" [disabled]="generating()" (click)="generateAnalysis()">
+        {{ analysis() ? 'Regenerate' : 'Generate' }}
+      </button>
+    </div>
+
+    @if (loadingAnalysis() || generating()) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    } @else if (generateError()) {
+      <p class="text-sm text-rose-600">{{ generateError() }}</p>
+    } @else if (analysis()) {
+      <div class="space-y-3">
+        <p class="text-sm text-slate-700">{{ analysis()!.payload.verdict }}</p>
+
+        @if (analysis()!.payload.hypotheses.length > 0) {
+          <div>
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Why it performed this way</div>
+            <ul class="mt-1 space-y-2">
+              @for (h of analysis()!.payload.hypotheses; track h.hypothesis) {
+                <li class="rounded-lg bg-slate-50 p-2 text-sm">
+                  <div class="font-medium text-slate-900">{{ h.hypothesis }}</div>
+                  <div class="mt-0.5 text-xs text-slate-500">{{ h.evidence }}</div>
+                  <span class="mt-1 inline-block rounded-full bg-slate-200 px-2 py-0.5 text-[10px] uppercase text-slate-600">
+                    {{ h.confidence }} confidence
+                  </span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (analysis()!.payload.replicationSteps.length > 0) {
+          <div>
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-400">
+              @if (post.performance?.classification === 'over') {
+                How to replicate this success
+              } @else if (post.performance?.classification === 'under') {
+                How to close the gap
+              } @else {
+                How to push this further
+              }
+            </div>
+            <ul class="mt-1 list-disc space-y-1 pl-4 text-sm text-slate-700">
+              @for (step of analysis()!.payload.replicationSteps; track step) {
+                <li>{{ step }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="text-sm text-slate-400">No AI analysis yet for this post.</p>
+    }
+  </div>
+
+  @if (post.permalink) {
+    <a [href]="post.permalink" target="_blank" rel="noopener" class="text-sm text-sky-600 hover:underline">
+      Open on Instagram
+    </a>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Close</button>
+</mat-dialog-actions>

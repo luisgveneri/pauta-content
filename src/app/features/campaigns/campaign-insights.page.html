@@ -1,0 +1,127 @@
+<app-page-header
+  title="Insights"
+  subtitle="Qué slots de contenido acompañan a las campañas con mejor resultado."
+/>
+
+@if (store.loading()) {
+  <mat-card class="app-card">
+    <div class="p-4">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </div>
+  </mat-card>
+} @else if (store.error()) {
+  <mat-card class="app-card">
+    <div class="p-4 text-sm text-rose-600">{{ store.error() }}</div>
+  </mat-card>
+} @else if (store.data(); as insights) {
+  <p class="mb-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-700">
+    {{ insights.disclaimer }}
+  </p>
+  <p class="mb-4 text-xs text-slate-500">
+    Las campañas de tipo Otro no se incluyen: miden cosas distintas entre sí y promediarlas sería engañoso.
+  </p>
+
+  <div class="space-y-4">
+    @for (objectiveInsights of insights.objectives; track objectiveInsights.objective) {
+      <mat-card class="app-card">
+        <div class="p-4">
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <div class="text-sm font-semibold text-slate-900">
+              {{ objectiveLabels[objectiveInsights.objective] }}
+            </div>
+            <span class="text-xs text-slate-500">{{ objectiveInsights.unitLabel }}</span>
+          </div>
+
+          @if (objectiveInsights.status === 'insufficient_data') {
+            <p class="text-sm text-slate-600">{{ objectiveInsights.message }}</p>
+
+            @if (objectiveInsights.overall; as overall) {
+              <p class="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
+                Tus {{ objectiveInsights.campaignsWithResult }} campañas hasta ahora: media
+                {{ overall.mean | number: '1.0-1' }}, mediana {{ overall.median | number: '1.0-1' }}
+                (rango {{ overall.min }}–{{ overall.max }}). No es una comparación, es solo tu histórico.
+              </p>
+            }
+          } @else {
+            @if (objectiveInsights.overall; as overall) {
+              <div class="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div class="rounded-lg bg-slate-50 p-2">
+                  <div class="text-[10px] uppercase text-slate-400">Media</div>
+                  <div class="text-sm font-medium text-slate-900">{{ overall.mean | number: '1.0-1' }}</div>
+                </div>
+                <div class="rounded-lg bg-slate-50 p-2">
+                  <div class="text-[10px] uppercase text-slate-400">Mediana</div>
+                  <div class="text-sm font-medium text-slate-900">{{ overall.median | number: '1.0-1' }}</div>
+                </div>
+                <div class="rounded-lg bg-slate-50 p-2">
+                  <div class="text-[10px] uppercase text-slate-400">Mínimo</div>
+                  <div class="text-sm font-medium text-slate-900">{{ overall.min }}</div>
+                </div>
+                <div class="rounded-lg bg-slate-50 p-2">
+                  <div class="text-[10px] uppercase text-slate-400">Máximo</div>
+                  <div class="text-sm font-medium text-slate-900">{{ overall.max }}</div>
+                </div>
+              </div>
+              <div class="mb-3 text-xs text-slate-400">
+                Basado en {{ objectiveInsights.campaignsWithResult }} campañas finalizadas con resultado registrado.
+              </div>
+            }
+
+            <div class="space-y-2">
+              @for (slot of objectiveInsights.slots; track slot.label) {
+                @if (slot.comparable) {
+                  <div class="rounded-lg border border-slate-200 p-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                          {{ phaseLabels[slot.phase] }}
+                        </span>
+                        <span class="ml-2 text-sm font-medium text-slate-900">{{ slot.label }}</span>
+                      </div>
+                      <span
+                        class="text-sm font-semibold"
+                        [class.text-emerald-600]="(slot.difference ?? 0) > 0"
+                        [class.text-rose-600]="(slot.difference ?? 0) < 0"
+                      >
+                        {{ (slot.difference ?? 0) > 0 ? '+' : '' }}{{ slot.difference | number: '1.0-1' }}
+                      </span>
+                    </div>
+                    <div class="mt-2 grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span class="text-slate-500">Confirmado (n={{ slot.withCount }}):</span>
+                        <span class="ml-1 font-medium text-slate-900">
+                          media {{ slot.withMean | number: '1.0-1' }}, mediana {{ slot.withMedian | number: '1.0-1' }}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="text-slate-500">No confirmado (n={{ slot.withoutCount }}):</span>
+                        <span class="ml-1 font-medium text-slate-900">
+                          media {{ slot.withoutMean | number: '1.0-1' }}, mediana
+                          {{ slot.withoutMedian | number: '1.0-1' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="rounded-lg border border-dashed border-slate-200 p-3 opacity-60">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500">
+                        {{ phaseLabels[slot.phase] }}
+                      </span>
+                      <span class="text-sm text-slate-500">{{ slot.label }}</span>
+                      <span class="text-xs text-slate-400">⏳</span>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-400">
+                      Aún no hay muestra suficiente para comparar este slot (confirmado en
+                      {{ slot.withCount }}, no confirmado en {{ slot.withoutCount }}).
+                    </p>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
+      </mat-card>
+    }
+  </div>
+}

@@ -1,5 +1,5 @@
 # Base image
-FROM node:18-alpine
+FROM node:24-alpine
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -7,6 +7,7 @@ WORKDIR /usr/src/app
 # Install app dependencies
 COPY package*.json ./
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
 # Install dependencies
 RUN npm install

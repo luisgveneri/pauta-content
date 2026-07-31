@@ -6,11 +6,11 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ContentService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.viralVideo.findMany({ orderBy: { createdAt: 'desc' } });
+  findAll(organizationId: string) {
+    return this.prisma.viralVideo.findMany({ where: { organizationId }, orderBy: { createdAt: 'desc' } });
   }
 
-  create(dto: CreateViralVideoDto) {
-    return this.prisma.viralVideo.create({ data: dto });
+  create(organizationId: string, dto: CreateViralVideoDto) {
+    return this.prisma.viralVideo.create({ data: { ...dto, organizationId } });
   }
 }

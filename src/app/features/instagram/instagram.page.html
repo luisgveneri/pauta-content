@@ -1,0 +1,278 @@
+<app-page-header
+  title="Instagram"
+  subtitle="Connect your account to see what content performs, and why."
+/>
+
+@if (oauthMessage()) {
+  <p class="mb-4 rounded-lg bg-sky-50 p-3 text-sm text-sky-700">{{ oauthMessage() }}</p>
+}
+
+@if (store.statusLoading()) {
+  <mat-card class="app-card">
+    <div class="p-4">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </div>
+  </mat-card>
+} @else if (!store.connected()) {
+  <mat-card class="app-card">
+    <div class="p-4">
+      <div class="text-sm font-semibold text-slate-900">Connect your Instagram Business account</div>
+      <p class="mt-1 max-w-xl text-sm text-slate-500">
+        Authorize with Facebook — we'll find the Instagram Business account linked to your Page
+        and start syncing automatically. No tokens to copy or paste.
+      </p>
+
+      <button mat-flat-button color="primary" class="mt-4" (click)="connectViaOAuth()">
+        <mat-icon class="mr-2">link</mat-icon>
+        Conectar con Facebook
+      </button>
+
+      @if (store.connectError()) {
+        <p class="mt-3 text-sm text-rose-600">{{ store.connectError() }}</p>
+      }
+    </div>
+  </mat-card>
+} @else {
+  <mat-card class="app-card mb-4">
+    <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <div class="text-sm font-semibold text-slate-900">&#64;{{ store.username() }}</div>
+        <div class="text-xs text-slate-500">
+          @if (store.lastSyncedAt(); as lastSyncedAt) {
+            Last synced {{ lastSyncedAt | date: 'medium' }}
+          } @else {
+            Not synced yet
+          }
+        </div>
+        @if (store.needsReconnect()) {
+          <div class="mt-1 text-xs text-amber-600">
+            Your connection seems invalid. Reconnect with Facebook.
+          </div>
+        }
+      </div>
+      <div class="flex items-center gap-2">
+        @if (store.needsReconnect()) {
+          <button mat-flat-button color="primary" (click)="connectViaOAuth()">
+            <mat-icon class="mr-2">link</mat-icon>
+            Reconectar
+          </button>
+        }
+        <button mat-flat-button color="primary" [disabled]="store.syncing()" (click)="store.sync()">
+          {{ store.syncing() ? 'Syncing…' : 'Sync now' }}
+        </button>
+        <button mat-stroked-button (click)="store.disconnect()">Disconnect</button>
+      </div>
+    </div>
+    @if (store.syncing()) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+    @if (store.syncError()) {
+      <p class="px-4 pb-3 text-sm text-rose-600">{{ store.syncError() }}</p>
+    }
+  </mat-card>
+
+  <div class="mb-4 grid gap-4 sm:grid-cols-3">
+    <mat-card class="app-card">
+      <div class="p-4">
+        <div class="text-xs text-slate-500">Posts tracked</div>
+        <div class="app-metric mt-1 text-2xl font-semibold text-slate-900">{{ store.posts().length }}</div>
+      </div>
+    </mat-card>
+    <mat-card class="app-card">
+      <div class="p-4">
+        <div class="text-xs text-slate-500">Over-performers</div>
+        <div class="app-metric mt-1 text-2xl font-semibold text-emerald-600">{{ store.overPerformers() }}</div>
+      </div>
+    </mat-card>
+    <mat-card class="app-card">
+      <div class="p-4">
+        <div class="text-xs text-slate-500">Under-performers</div>
+        <div class="app-metric mt-1 text-2xl font-semibold text-rose-600">{{ store.underPerformers() }}</div>
+      </div>
+    </mat-card>
+  </div>
+
+  <mat-card class="app-card">
+    <mat-tab-group>
+      <mat-tab label="Posts">
+        <div class="p-4">
+          <div class="mb-3 text-sm font-semibold text-slate-900">Posts</div>
+
+          @if (store.postsLoading()) {
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          } @else if (store.posts().length === 0) {
+            <p class="text-sm text-slate-400">No posts synced yet. Hit "Sync now" above.</p>
+          } @else {
+            <div class="overflow-x-auto">
+              <table
+                mat-table
+                matSort
+                [matSortActive]="currentSort().active"
+                [matSortDirection]="currentSort().direction"
+                (matSortChange)="onSortChange($event)"
+                [dataSource]="sortedPosts()"
+                class="app-table min-w-[860px]"
+              >
+                <ng-container matColumnDef="thumbnail">
+                  <th mat-header-cell *matHeaderCellDef class="w-14"></th>
+                  <td mat-cell *matCellDef="let row" class="w-14 cursor-pointer" (click)="openPost(row)">
+                    <div class="relative h-10 w-10 overflow-hidden rounded-md bg-slate-100">
+                      <mat-icon class="absolute inset-0 flex items-center justify-center text-base text-slate-300">image</mat-icon>
+                      @if (row.thumbnailUrl || row.mediaUrl) {
+                        <img
+                          [src]="row.thumbnailUrl || row.mediaUrl"
+                          alt=""
+                          class="relative h-10 w-10 object-cover"
+                          (error)="$any($event.target).style.display = 'none'"
+                        />
+                      }
+                    </div>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="caption">
+                  <th mat-header-cell *matHeaderCellDef>Post</th>
+                  <td mat-cell *matCellDef="let row" class="max-w-[280px] cursor-pointer" (click)="openPost(row)">
+                    <div class="line-clamp-2 text-sm font-medium text-slate-900">
+                      {{ row.caption || '(no caption)' }}
+                    </div>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="mediaType">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
+                  <td mat-cell *matCellDef="let row">
+                    <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                      {{ row.mediaProductType || row.mediaType }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="postedAt">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
+                  <td mat-cell *matCellDef="let row">{{ row.postedAt | date }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="reach">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-right">Reach</th>
+                  <td mat-cell *matCellDef="let row" class="text-right tabular-nums">
+                    {{ row.reach | number }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="engagement">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-right">Engagement</th>
+                  <td mat-cell *matCellDef="let row" class="text-right tabular-nums">
+                    {{ row.performance?.engagementRate ?? 0 | percent: '1.1-1' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="performance">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>Performance</th>
+                  <td mat-cell *matCellDef="let row">
+                    @if (row.performance?.classification === 'over') {
+                      <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">Over</span>
+                    } @else if (row.performance?.classification === 'under') {
+                      <span class="rounded-full bg-rose-50 px-2 py-1 text-xs text-rose-700">Under</span>
+                    } @else if (row.performance) {
+                      <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">Normal</span>
+                    } @else {
+                      <span class="rounded-full bg-slate-50 px-2 py-1 text-xs text-slate-400">No data</span>
+                    }
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+              </table>
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab label="AI Insights">
+        <div class="p-4">
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <div class="text-sm font-semibold text-slate-900">What's working, and why</div>
+            <button mat-stroked-button color="primary" [disabled]="store.analyzingAccount()" (click)="store.generateAccountAnalysis()">
+              {{ store.accountAnalysis() ? 'Regenerate' : 'Generate' }}
+            </button>
+          </div>
+
+          @if (store.analyzingAccount()) {
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          } @else if (store.analyzeAccountError()) {
+            <p class="text-sm text-rose-600">{{ store.analyzeAccountError() }}</p>
+          } @else if (store.accountAnalysis(); as analysis) {
+            <div class="space-y-4">
+              <p class="text-sm text-slate-700">{{ analysis.payload.summary }}</p>
+
+              @if (analysis.payload.patterns.length > 0) {
+                <div>
+                  <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Patterns</div>
+                  <ul class="mt-1 space-y-2">
+                    @for (p of analysis.payload.patterns; track p.pattern) {
+                      <li class="rounded-lg bg-slate-50 p-3 text-sm">
+                        <div class="font-medium text-slate-900">{{ p.pattern }}</div>
+                        <div class="mt-0.5 text-xs text-slate-500">{{ p.evidence }}</div>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+
+              @if (analysis.payload.recommendations.length > 0) {
+                <div>
+                  <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Recommendations</div>
+                  <ul class="mt-1 space-y-2">
+                    @for (r of analysis.payload.recommendations; track r.action) {
+                      <li class="rounded-lg border border-slate-200 p-3 text-sm">
+                        <div class="font-medium text-slate-900">{{ r.action }}</div>
+                        <div class="mt-0.5 text-xs text-slate-500">{{ r.rationale }}</div>
+                        <div class="mt-1 text-xs text-sky-700">{{ r.expectedImpact }}</div>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+
+              @if (analysis.payload.bestPostingWindows.length > 0) {
+                <div>
+                  <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Best posting windows</div>
+                  <div class="mt-1 flex flex-wrap gap-2">
+                    @for (w of analysis.payload.bestPostingWindows; track w) {
+                      <span class="rounded-full bg-sky-50 px-2 py-1 text-xs text-sky-700">{{ w }}</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="text-sm text-slate-400">
+              No AI analysis yet. Sync your posts first, then hit "Generate".
+            </p>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Trends">
+        <div class="p-4 space-y-6">
+          @if (store.trendsLoading()) {
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          } @else if (store.trends().length === 0) {
+            <p class="text-sm text-slate-400">No trend data yet. Sync a few times over several days to see growth.</p>
+          } @else {
+            <div>
+              <div class="mb-1 text-sm font-semibold text-slate-900">Followers</div>
+              <app-line-chart [points]="followersTrend()" color="#0284c7" />
+            </div>
+            <div>
+              <div class="mb-1 text-sm font-semibold text-slate-900">Daily reach</div>
+              <app-line-chart [points]="reachTrend()" color="#059669" />
+            </div>
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+}

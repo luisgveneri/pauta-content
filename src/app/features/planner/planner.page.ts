@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -18,9 +18,9 @@ import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.com
     DatePipe,
     PageHeaderComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './planner.page.html',
 })
 export class PlannerPage {
   protected readonly store = inject(PlannerStore);
 }
-

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,9 +18,9 @@ import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.com
     MatProgressBarModule,
     PageHeaderComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './ideas.page.html',
 })
 export class IdeasPage {
   protected readonly store = inject(IdeasStore);
 }
-
