@@ -47,7 +47,9 @@ function median(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
 }
 
 function hourBucket(hour: number): string {
@@ -57,7 +59,15 @@ function hourBucket(hour: number): string {
   return '18-23';
 }
 
-const DOW_LABELS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const DOW_LABELS = [
+  'Domingo',
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado',
+];
 
 function captionLengthBucket(length: number): string {
   if (length <= 50) return '0-50';
@@ -66,7 +76,10 @@ function captionLengthBucket(length: number): string {
   return '300+';
 }
 
-function hashtagCountBucket(count: number): string {
+// Exported so RecommendationService can bucket a Trend's hashtag count the
+// exact same way before comparing it against this account's byHashtagCount
+// lift — "account fit" only means something if both sides use one taxonomy.
+export function hashtagCountBucket(count: number): string {
   if (count === 0) return '0';
   if (count <= 3) return '1-3';
   if (count <= 8) return '4-8';
@@ -75,10 +88,16 @@ function hashtagCountBucket(count: number): string {
 
 @Injectable()
 export class PerformanceService {
-  analyze(posts: PerformancePost[], followersCount: number): PerformanceAnalysis {
+  analyze(
+    posts: PerformancePost[],
+    followersCount: number,
+  ): PerformanceAnalysis {
     const engagementByPostId = new Map<string, number>();
     for (const post of posts) {
-      engagementByPostId.set(post.id, this.engagementRate(post, followersCount));
+      engagementByPostId.set(
+        post.id,
+        this.engagementRate(post, followersCount),
+      );
     }
 
     const baseline = median([...engagementByPostId.values()]);
@@ -98,20 +117,41 @@ export class PerformanceService {
       baselineEngagementRate: baseline,
       posts: postPerformances,
       segments: {
-        byMediaType: this.segmentBy(posts, engagementByPostId, baseline, (p) => p.mediaType),
-        byPostedHour: this.segmentBy(posts, engagementByPostId, baseline, (p) => hourBucket(p.postedHour)),
-        byPostedDow: this.segmentBy(posts, engagementByPostId, baseline, (p) => DOW_LABELS[p.postedDow]),
-        byCaptionLength: this.segmentBy(posts, engagementByPostId, baseline, (p) =>
-          captionLengthBucket(p.captionLength),
+        byMediaType: this.segmentBy(
+          posts,
+          engagementByPostId,
+          baseline,
+          (p) => p.mediaType,
         ),
-        byHashtagCount: this.segmentBy(posts, engagementByPostId, baseline, (p) =>
-          hashtagCountBucket(p.hashtagCount),
+        byPostedHour: this.segmentBy(posts, engagementByPostId, baseline, (p) =>
+          hourBucket(p.postedHour),
+        ),
+        byPostedDow: this.segmentBy(
+          posts,
+          engagementByPostId,
+          baseline,
+          (p) => DOW_LABELS[p.postedDow],
+        ),
+        byCaptionLength: this.segmentBy(
+          posts,
+          engagementByPostId,
+          baseline,
+          (p) => captionLengthBucket(p.captionLength),
+        ),
+        byHashtagCount: this.segmentBy(
+          posts,
+          engagementByPostId,
+          baseline,
+          (p) => hashtagCountBucket(p.hashtagCount),
         ),
       },
     };
   }
 
-  private engagementRate(post: PerformancePost, followersCount: number): number {
+  private engagementRate(
+    post: PerformancePost,
+    followersCount: number,
+  ): number {
     const denominator = post.reach > 0 ? post.reach : followersCount;
     if (denominator <= 0) return 0;
     return post.totalInteractions / denominator;
@@ -119,7 +159,8 @@ export class PerformanceService {
 
   private classify(performanceIndex: number): Classification {
     if (performanceIndex >= OVER_THRESHOLD) return 'over';
-    if (performanceIndex <= UNDER_THRESHOLD && performanceIndex > 0) return 'under';
+    if (performanceIndex <= UNDER_THRESHOLD && performanceIndex > 0)
+      return 'under';
     return 'normal';
   }
 

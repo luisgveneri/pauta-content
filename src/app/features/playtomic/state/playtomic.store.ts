@@ -1,10 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { PlaytomicService } from '../data-access/playtomic.service';
-import { PlaytomicInsights } from '../domain/booking.model';
+import { MorningBriefing, OccupancyGap, PlaytomicInsights } from '../domain/booking.model';
 
 type PlaytomicState = {
   loading: boolean;
   data: PlaytomicInsights | null;
+  gaps: OccupancyGap[];
+  briefing: MorningBriefing | null;
   error: string | null;
   seeding: boolean;
 };
@@ -12,6 +14,8 @@ type PlaytomicState = {
 const INITIAL_STATE: PlaytomicState = {
   loading: false,
   data: null,
+  gaps: [],
+  briefing: null,
   error: null,
   seeding: false,
 };
@@ -25,14 +29,20 @@ export class PlaytomicStore {
 
   readonly loading = computed(() => this._state().loading);
   readonly data = computed(() => this._state().data);
+  readonly gaps = computed(() => this._state().gaps);
+  readonly briefing = computed(() => this._state().briefing);
   readonly error = computed(() => this._state().error);
   readonly seeding = computed(() => this._state().seeding);
 
   async load() {
     this._state.update((s) => ({ ...s, loading: true, error: null }));
     try {
-      const data = await this.playtomicService.getInsights();
-      this._state.update((s) => ({ ...s, loading: false, data }));
+      const [data, gaps, briefing] = await Promise.all([
+        this.playtomicService.getInsights(),
+        this.playtomicService.getGaps(),
+        this.playtomicService.getBriefing(),
+      ]);
+      this._state.update((s) => ({ ...s, loading: false, data, gaps, briefing }));
     } catch (error) {
       this._state.update((s) => ({ ...s, loading: false, error: this.extractError(error) }));
     }

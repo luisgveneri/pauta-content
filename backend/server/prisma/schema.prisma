@@ -31,6 +31,9 @@ model Organization {
   plannerItems      PlannerItem[]
   campaigns         Campaign[]
   bookings          Booking[]
+  players           Player[]
+  savedTrends       SavedTrend[]
+  trendAdaptations  TrendAdaptation[]
 }
 
 model ViralVideo {
@@ -50,12 +53,12 @@ model ViralVideo {
 }
 
 model Idea {
-  id         String   @id @default(cuid())
-  topic      String
-  hook       String
+  id          String   @id @default(cuid())
+  topic       String
+  hook        String
   description String
-  whyViral   String
-  createdAt  DateTime @default(now())
+  whyViral    String
+  createdAt   DateTime @default(now())
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -74,7 +77,8 @@ model PlannerItem {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  campaignSlot CampaignContentSlot?
+  campaignSlot    CampaignContentSlot?
+  trendAdaptation TrendAdaptation?
 
   @@index([organizationId])
 }
@@ -93,9 +97,9 @@ enum CampaignSlotPhase {
 }
 
 model Campaign {
-  id             String            @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   name           String
   objective      CampaignObjective
@@ -109,7 +113,8 @@ model Campaign {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  contentSlots CampaignContentSlot[]
+  contentSlots     CampaignContentSlot[]
+  trendAdaptations TrendAdaptation[]
 
   @@index([organizationId])
 }
@@ -132,16 +137,16 @@ model CampaignContentSlot {
 }
 
 model InstagramAccount {
-  id              String    @id @default(cuid())
-  igUserId        String    @unique
-  username        String
-  pageId          String?
-  accessTokenEnc  String
-  tokenExpiresAt  DateTime?
-  needsReconnect  Boolean   @default(false)
-  lastSyncedAt    DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  igUserId       String    @unique
+  username       String
+  pageId         String?
+  accessTokenEnc String
+  tokenExpiresAt DateTime?
+  needsReconnect Boolean   @default(false)
+  lastSyncedAt   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -154,11 +159,11 @@ model InstagramAccount {
 }
 
 model InstagramPost {
-  id               String    @id @default(cuid())
-  accountId        String
-  account          InstagramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  id        String           @id @default(cuid())
+  accountId String
+  account   InstagramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  igMediaId        String    @unique
+  igMediaId        String   @unique
   caption          String?
   mediaType        String
   mediaProductType String?
@@ -169,13 +174,13 @@ model InstagramPost {
 
   // latest known metrics (denormalized for fast listing/sorting)
   likeCount         Int  @default(0)
-  commentsCount      Int  @default(0)
-  reach              Int  @default(0)
-  views              Int  @default(0)
-  saved              Int  @default(0)
-  shares             Int  @default(0)
-  totalInteractions  Int  @default(0)
-  avgWatchTimeMs     Int?
+  commentsCount     Int  @default(0)
+  reach             Int  @default(0)
+  views             Int  @default(0)
+  saved             Int  @default(0)
+  shares            Int  @default(0)
+  totalInteractions Int  @default(0)
+  avgWatchTimeMs    Int?
 
   // derived fields computed at sync time, used by performance analysis
   captionLength Int @default(0)
@@ -184,28 +189,28 @@ model InstagramPost {
   postedDow     Int
 
   insightsSyncedAt DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  metrics   InstagramPostMetric[]
-  analyses  InstagramAnalysis[]
+  metrics  InstagramPostMetric[]
+  analyses InstagramAnalysis[]
 
   @@index([accountId, postedAt])
 }
 
 model InstagramPostMetric {
-  id         String   @id @default(cuid())
-  postId     String
-  post       InstagramPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  id     String        @id @default(cuid())
+  postId String
+  post   InstagramPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   capturedAt        DateTime
-  likeCount         Int @default(0)
-  commentsCount     Int @default(0)
-  reach             Int @default(0)
-  views             Int @default(0)
-  saved             Int @default(0)
-  shares            Int @default(0)
-  totalInteractions Int @default(0)
+  likeCount         Int      @default(0)
+  commentsCount     Int      @default(0)
+  reach             Int      @default(0)
+  views             Int      @default(0)
+  saved             Int      @default(0)
+  shares            Int      @default(0)
+  totalInteractions Int      @default(0)
 
   createdAt DateTime @default(now())
 
@@ -213,17 +218,17 @@ model InstagramPostMetric {
 }
 
 model InstagramAccountSnapshot {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   accountId String
   account   InstagramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  capturedAt          DateTime
-  followersCount      Int
-  followsCount        Int
-  mediaCount          Int
-  reachDay            Int?
-  profileViewsDay     Int?
-  accountsEngagedDay  Int?
+  capturedAt         DateTime
+  followersCount     Int
+  followsCount       Int
+  mediaCount         Int
+  reachDay           Int?
+  profileViewsDay    Int?
+  accountsEngagedDay Int?
 
   createdAt DateTime @default(now())
 
@@ -231,7 +236,7 @@ model InstagramAccountSnapshot {
 }
 
 model InstagramAnalysis {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   accountId String
   account   InstagramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
@@ -263,9 +268,175 @@ model Booking {
   priceCents        Int
   participantsCount Int
   status            String // "CONFIRMED" | "CANCELED"
-  source            String @default("mock") // "mock" | "playtomic" — never mixed silently
+  source            String   @default("mock") // "mock" | "playtomic" — never mixed silently
 
   createdAt DateTime @default(now())
 
+  participants BookingParticipant[]
+
   @@index([organizationId, startAt])
+}
+
+model Player {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name  String
+  email String?
+
+  createdAt DateTime @default(now())
+
+  participations BookingParticipant[]
+
+  @@index([organizationId])
+}
+
+model BookingParticipant {
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  playerId  String
+  player    Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([bookingId, playerId])
+  @@index([playerId])
+}
+
+// Which platform the content is *from* — kept separate from whether the row
+// is demo data (see Trend.isDemo below), the same split Booking makes with
+// its own `source` field ("mock" | "playtomic") vs a hypothetical platform
+// dimension. Conflating "platform" and "real vs demo" would make it
+// impossible to show a realistic multi-platform Discover feed while still
+// being honest that no row was actually pulled from TikTok/Instagram yet.
+enum TrendSource {
+  TIKTOK
+  INSTAGRAM
+  YOUTUBE
+  MANUAL
+}
+
+enum TrendStatus {
+  NEW
+  RISING
+  HOT
+  STABLE
+  DECLINING
+  EXPIRED
+}
+
+// Global catalogue, deliberately NOT organization-scoped: a viral video is
+// the same fact for every org, so it's discovered, scored and AI-analyzed
+// once — never duplicated or re-analyzed per club. Isolation lives one level
+// down, on SavedTrend/TrendAdaptation. See the Viral Intelligence plan.
+model Trend {
+  id         String      @id @default(cuid())
+  source     TrendSource
+  isDemo     Boolean     @default(false) // true for MockTrendProvider rows — never claim these came from the real platform
+  externalId String
+  url        String
+
+  authorHandle      String
+  authorFollowers   Int
+  authorMedianViews Int? // baseline for relative performance; null when the source can't provide one
+
+  title        String
+  caption      String?
+  hashtags     String[]
+  durationSec  Int
+  thumbnailUrl String?
+  publishedAt  DateTime
+
+  views    Int
+  likes    Int
+  comments Int
+  shares   Int
+  saves    Int
+
+  // Denormalized scoring output (same call as InstagramPost) — every list
+  // query sorts/filters by these, so they must not be recomputed on read.
+  viralScore          Int         @default(0)
+  scoreBreakdown      Json?
+  relativePerformance Float?
+  status              TrendStatus @default(NEW)
+  scoredAt            DateTime?
+
+  fingerprint String? // normalized title+duration+author, for future cross-source dedup
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pattern     TrendPattern?
+  savedBy     SavedTrend[]
+  adaptations TrendAdaptation[]
+
+  // Re-running discovery must upsert, never duplicate, the same piece of content.
+  @@unique([source, externalId])
+  @@index([viralScore])
+  @@index([fingerprint])
+  @@index([isDemo])
+}
+
+// AI-extracted creative pattern. 1:1 with Trend and permanently cached — a
+// trend is analyzed by the LLM at most once, never re-analyzed on every view.
+model TrendPattern {
+  id      String @id @default(cuid())
+  trendId String @unique
+  trend   Trend  @relation(fields: [trendId], references: [id], onDelete: Cascade)
+
+  model   String
+  payload Json // full validated CreativePattern (hook, structure, mechanism, editing style...)
+
+  // Denormalized from payload so Discover can filter without touching Json.
+  format  String
+  topic   String
+  emotion String
+  ctaType String
+
+  createdAt DateTime @default(now())
+
+  @@index([format])
+}
+
+model SavedTrend {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  trendId        String
+  trend          Trend        @relation(fields: [trendId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([organizationId, trendId])
+  @@index([trendId])
+}
+
+model TrendAdaptation {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  trendId        String
+  trend          Trend        @relation(fields: [trendId], references: [id], onDelete: Cascade)
+
+  // Set when generated in the context of an active club campaign — lets a
+  // recommendation reference "fits your active Summer Tournament campaign".
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  model   String
+  payload Json // title, hook, concept, structure, scenes, script, cta, caption, platform, durationSec, rationale
+  status  String @default("DRAFT") // "DRAFT" | "PLANNED"
+
+  // The feedback loop's spine: Trend -> Adaptation -> PlannerItem, queryable
+  // from day one so PlannerItem -> InstagramPost can close the loop later
+  // without a migration.
+  plannerItemId String?      @unique
+  plannerItem   PlannerItem? @relation(fields: [plannerItemId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, createdAt])
 }

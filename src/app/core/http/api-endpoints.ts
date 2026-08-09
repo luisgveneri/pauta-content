@@ -37,6 +37,18 @@ export const apiEndpoints = {
   playtomic: {
     insights: '/api/playtomic/insights',
     seedMock: '/api/playtomic/mock/seed',
+    gaps: '/api/playtomic/gaps',
+    briefing: '/api/playtomic/briefing',
+  },
+  viralIntelligence: {
+    trends: '/api/viral-intelligence/trends',
+    trend: (id: string) => `/api/viral-intelligence/trends/${id}`,
+    recommendations: '/api/viral-intelligence/recommendations',
+    saved: '/api/viral-intelligence/saved',
+    save: (id: string) => `/api/viral-intelligence/trends/${id}/save`,
+    adapt: (id: string) => `/api/viral-intelligence/trends/${id}/adapt`,
+    plan: (adaptationId: string) => `/api/viral-intelligence/adaptations/${adaptationId}/plan`,
+    seedMock: '/api/viral-intelligence/mock/seed',
   },
 } as const;
 

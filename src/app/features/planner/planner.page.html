@@ -14,9 +14,15 @@
   </mat-button-toggle-group>
 
   <div class="flex items-center gap-2">
-    <button mat-stroked-button (click)="store.addMockItem()">Add item</button>
+    <button mat-stroked-button [disabled]="store.adding()" (click)="store.addItem()">
+      {{ store.adding() ? 'Adding…' : 'Add item' }}
+    </button>
   </div>
 </div>
+
+@if (store.error()) {
+  <p class="mb-4 rounded-lg bg-rose-50 p-3 text-xs text-rose-700">{{ store.error() }}</p>
+}
 
 <div class="grid gap-4 lg:grid-cols-4">
   <mat-card class="app-card lg:col-span-3">
@@ -32,6 +38,14 @@
                 {{ item.title }}
               </div>
               <div class="mt-1 text-xs text-slate-500">{{ item.platform }}</div>
+              @if (item.trendAdaptation; as adaptation) {
+                <a
+                  [routerLink]="['/viral-intelligence', adaptation.trend.id]"
+                  class="mt-1 inline-block text-xs text-sky-700 hover:underline"
+                >
+                  🔥 From Viral Intelligence: {{ adaptation.trend.title }}
+                </a>
+              }
             </div>
             <mat-chip-set>
               <mat-chip>{{ item.status }}</mat-chip>

@@ -1,0 +1,181 @@
+<app-page-header
+  title="Viral Intelligence"
+  subtitle="Discover what's working right now, and why — ranked by performance relative to each account, not raw views."
+/>
+
+<p class="mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-700">
+  These are <strong>demo trends</strong>, not content pulled live from TikTok/Instagram/YouTube — there is no
+  commercially-eligible discovery API for those platforms yet. Scoring, ranking, and recommendation logic run
+  exactly as they will once a real source is connected.
+</p>
+
+<mat-tab-group (selectedTabChange)="onTabChange($event)" animationDuration="0ms">
+  <mat-tab label="For You">
+    <div class="pt-4">
+      @if (store.recommendationsLoading()) {
+        <mat-card class="app-card">
+          <div class="p-4">
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          </div>
+        </mat-card>
+      } @else if (store.recommendationsError()) {
+        <mat-card class="app-card">
+          <div class="p-4 text-sm text-rose-600">{{ store.recommendationsError() }}</div>
+        </mat-card>
+      } @else if (store.recommendations().length === 0) {
+        <mat-card class="app-card">
+          <div class="p-4">
+            <div class="text-sm font-semibold text-slate-900">No recommendations yet</div>
+            <p class="mt-1 max-w-xl text-sm text-slate-500">
+              Seed demo trends from the Discover tab to see personalized recommendations here.
+            </p>
+          </div>
+        </mat-card>
+      } @else {
+        @if (store.personalizationLevel() !== 'full') {
+          <p class="mb-4 rounded-lg bg-sky-50 p-3 text-xs text-sky-700">
+            @if (store.personalizationLevel() === 'partial') {
+              These recommendations use your planner/Instagram activity where available, but there isn't enough
+              synced Instagram history yet for full personalization.
+            } @else {
+              Connect Instagram and add planner content to personalize these recommendations — for now they're
+              ranked on trend performance alone.
+            }
+          </p>
+        }
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          @for (recommendation of store.recommendations(); track recommendation.trend.id) {
+            <app-recommendation-card
+              [recommendation]="recommendation"
+              [saved]="store.savedTrendIds().has(recommendation.trend.id)"
+              [savePending]="store.savingTrendId() === recommendation.trend.id"
+              (toggleSave)="store.toggleSave(recommendation.trend.id)"
+            />
+          }
+        </div>
+      }
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Discover">
+    <div class="pt-4">
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div class="flex flex-wrap items-end gap-3">
+          <mat-form-field appearance="outline" class="w-40">
+            <mat-label>Platform</mat-label>
+            <mat-select [value]="store.filters().source ?? 'ALL'" (selectionChange)="setSource($event.value)">
+              <mat-option value="ALL">All platforms</mat-option>
+              @for (source of sources; track source) {
+                <mat-option [value]="source">{{ sourceLabels[source] }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-48">
+            <mat-label>Sort by</mat-label>
+            <mat-select [value]="store.filters().sort ?? 'score'" (selectionChange)="setSort($event.value)">
+              @for (sort of sortOptions; track sort) {
+                <mat-option [value]="sort">{{ sortLabels[sort] }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-32">
+            <mat-label>Min. score</mat-label>
+            <input
+              matInput
+              type="number"
+              min="0"
+              max="100"
+              [value]="store.filters().minScore ?? ''"
+              (change)="setMinScore($any($event.target).value)"
+            />
+          </mat-form-field>
+        </div>
+
+        <button mat-stroked-button [disabled]="store.seeding()" (click)="store.seedMockData()">
+          {{ store.seeding() ? 'Seeding…' : 'Refresh demo data' }}
+        </button>
+      </div>
+
+      @if (store.error()) {
+        <mat-card class="app-card mb-4">
+          <div class="p-4 text-sm text-rose-600">{{ store.error() }}</div>
+        </mat-card>
+      }
+
+      @if (store.loading()) {
+        <mat-card class="app-card">
+          <div class="p-4">
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          </div>
+        </mat-card>
+      } @else if (store.trends().length === 0) {
+        <mat-card class="app-card">
+          <div class="p-4">
+            <div class="text-sm font-semibold text-slate-900">No trends yet</div>
+            <p class="mt-1 max-w-xl text-sm text-slate-500">
+              Generate demo trends to explore Discover, scoring, and recommendations.
+            </p>
+            <button
+              mat-flat-button
+              color="primary"
+              class="mt-4"
+              [disabled]="store.seeding()"
+              (click)="store.seedMockData()"
+            >
+              {{ store.seeding() ? 'Seeding…' : 'Seed demo trends' }}
+            </button>
+          </div>
+        </mat-card>
+      } @else {
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          @for (trend of store.trends(); track trend.id) {
+            <app-trend-card
+              [trend]="trend"
+              [saved]="store.savedTrendIds().has(trend.id)"
+              [savePending]="store.savingTrendId() === trend.id"
+              (toggleSave)="store.toggleSave(trend.id)"
+            />
+          }
+        </div>
+      }
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Saved">
+    <div class="pt-4">
+      @if (store.savedLoading()) {
+        <mat-card class="app-card">
+          <div class="p-4">
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          </div>
+        </mat-card>
+      } @else if (store.savedError()) {
+        <mat-card class="app-card">
+          <div class="p-4 text-sm text-rose-600">{{ store.savedError() }}</div>
+        </mat-card>
+      } @else if (store.saved().length === 0) {
+        <mat-card class="app-card">
+          <div class="p-4">
+            <div class="text-sm font-semibold text-slate-900">Nothing saved yet</div>
+            <p class="mt-1 max-w-xl text-sm text-slate-500">
+              Bookmark trends from Discover or For You to keep them here for later.
+            </p>
+          </div>
+        </mat-card>
+      } @else {
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          @for (trend of store.saved(); track trend.id) {
+            <app-trend-card
+              [trend]="trend"
+              [saved]="true"
+              [savePending]="store.savingTrendId() === trend.id"
+              (toggleSave)="store.toggleSave(trend.id)"
+            />
+          }
+        </div>
+      }
+    </div>
+  </mat-tab>
+</mat-tab-group>

@@ -36,6 +36,59 @@
       mientras conectamos Playtomic de verdad.
     </p>
 
+    @if (store.briefing(); as briefing) {
+      @if (briefing.hasData) {
+        <mat-card class="app-card mb-4">
+          <div class="p-4">
+            <div class="mb-3 text-sm font-semibold text-slate-900">Briefing de hoy</div>
+            <div class="space-y-2 text-sm text-slate-700">
+              @if (briefing.yesterday; as y) {
+                <p>
+                  Ayer: {{ y.bookingsCount }} reservas y {{ y.revenueCents / 100 | currency: 'EUR' }}
+                  @if (y.baseline && y.deltaPercent !== null) {
+                    —
+                    <span [class.text-emerald-600]="y.deltaPercent >= 0" [class.text-rose-600]="y.deltaPercent < 0">
+                      {{ y.deltaPercent >= 0 ? '+' : '' }}{{ y.deltaPercent }}%
+                    </span>
+                    respecto a la media de ese día de la semana ({{ y.baseline.meanBookings | number: '1.0-1' }},
+                    sobre {{ y.baseline.observations }} semanas).
+                  } @else {
+                    Todavía no hay suficientes semanas en la ventana para comparar.
+                  }
+                </p>
+              }
+              @if (briefing.today; as t) {
+                <p>
+                  Hoy: {{ t.occupancyPercent }}% de ocupación. Quedan {{ t.freeSlotsRemaining }} franjas libres a
+                  partir de ahora.
+                </p>
+              }
+              <p>{{ briefing.newPlayers7d }} jugadores hicieron su primera reserva en los últimos 7 días.</p>
+              @if (briefing.contentToday.length === 0) {
+                <p>No tienes contenido planificado para hoy.</p>
+              } @else {
+                <p>
+                  Publicas hoy:
+                  @for (item of briefing.contentToday; track item.id; let last = $last) {
+                    "{{ item.title }}" ({{ item.platform }}){{ last ? '' : ', ' }}
+                  }
+                </p>
+              }
+              @if (briefing.topGap; as gap) {
+                <p>
+                  Hueco más claro: {{ gap.dayLabel }} {{ gap.slotLabel }}, {{ gap.occupancyPercent }}% de ocupación
+                  — el próximo es el {{ gap.nextDate | date: 'd MMM' }}.
+                </p>
+                <a mat-stroked-button color="primary" class="mt-1" [routerLink]="['/campaigns']" [queryParams]="{ objective: 'OTHER' }">
+                  Crear campaña
+                </a>
+              }
+            </div>
+          </div>
+        </mat-card>
+      }
+    }
+
     @if (insights.overall; as overall) {
       <div class="mb-4 grid gap-4 sm:grid-cols-3">
         <mat-card class="app-card">
@@ -61,6 +114,32 @@
           </div>
         </mat-card>
       </div>
+    }
+
+    @if (insights.players; as players) {
+      <mat-card class="app-card mb-4">
+        <div class="p-4">
+          <div class="mb-3 text-sm font-semibold text-slate-900">Jugadores</div>
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div>
+              <div class="text-xs text-slate-500">Activos (60 días)</div>
+              <div class="app-metric mt-1 text-xl font-semibold text-slate-900">{{ players.totalActive }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-slate-500">Nuevos (14 días)</div>
+              <div class="app-metric mt-1 text-xl font-semibold text-emerald-600">{{ players.newCount }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-slate-500">Recurrentes</div>
+              <div class="app-metric mt-1 text-xl font-semibold text-slate-900">{{ players.recurringCount }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-slate-500">Dormidos (+30 días)</div>
+              <div class="app-metric mt-1 text-xl font-semibold text-amber-600">{{ players.dormantCount }}</div>
+            </div>
+          </div>
+        </div>
+      </mat-card>
     }
 
     <mat-card class="app-card mb-4">
@@ -91,6 +170,46 @@
                     {{ item.revenueCentsInWindow / 100 | currency: 'EUR' }}
                   </div>
                 </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </mat-card>
+
+    <mat-card class="app-card mb-4">
+      <div class="p-4">
+        <div class="mb-1 text-sm font-semibold text-slate-900">Huecos de ocupación</div>
+        <p class="mb-3 text-xs text-slate-500">
+          Franjas recurrentes con ocupación por debajo del 35% en los últimos 60 días.
+        </p>
+        @if (store.gaps().length === 0) {
+          <p class="text-sm text-slate-400">
+            No se detectan huecos claros — la ocupación está razonablemente repartida en todas las franjas.
+          </p>
+        } @else {
+          <div class="space-y-2">
+            @for (gap of store.gaps(); track gap.dayOfWeek + '-' + gap.slotStartMinutes) {
+              <div class="rounded-lg border border-dashed border-slate-200 p-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span class="text-sm font-medium text-slate-900">{{ gap.dayLabel }}</span>
+                    <span class="ml-2 text-sm text-slate-500">{{ gap.slotLabel }}</span>
+                  </div>
+                  <span class="rounded-full bg-rose-50 px-2 py-1 text-xs text-rose-700">
+                    {{ gap.occupancyPercent }}% ocupación
+                  </span>
+                </div>
+                <p class="mt-2 text-xs text-slate-600">{{ gap.suggestion }}</p>
+                <a
+                  mat-stroked-button
+                  color="primary"
+                  class="mt-2"
+                  [routerLink]="['/campaigns']"
+                  [queryParams]="{ objective: 'OTHER' }"
+                >
+                  Crear campaña
+                </a>
               </div>
             }
           </div>

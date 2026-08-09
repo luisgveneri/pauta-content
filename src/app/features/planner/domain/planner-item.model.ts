@@ -8,5 +8,12 @@ export type PlannerItem = {
   title: string;
   platform: Platform;
   status: PlannerItemStatus;
+  trendAdaptation?: { trend: { id: string; title: string } } | null;
 };
 
+export type CreatePlannerItemDto = {
+  date: string;
+  title: string;
+  platform: Platform;
+  status: PlannerItemStatus;
+};

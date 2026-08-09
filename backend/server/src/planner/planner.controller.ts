@@ -13,7 +13,10 @@ export class PlannerController {
   }
 
   @Post('items')
-  createItem(@CurrentOrg() organizationId: string, @Body() dto: CreatePlannerItemDto) {
+  createItem(
+    @CurrentOrg() organizationId: string,
+    @Body() dto: CreatePlannerItemDto,
+  ) {
     return this.plannerService.create(organizationId, dto);
   }
 }

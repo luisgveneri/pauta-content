@@ -9,6 +9,7 @@ import { InstagramModule } from './instagram/instagram.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PlannerModule } from './planner/planner.module';
 import { PlaytomicModule } from './playtomic/playtomic.module';
+import { ViralIntelligenceModule } from './viral-intelligence/viral-intelligence.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PlaytomicModule } from './playtomic/playtomic.module';
     InstagramModule,
     CampaignsModule,
     PlaytomicModule,
+    ViralIntelligenceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,0 +1,214 @@
+@if (store.detailLoading()) {
+  <mat-card class="app-card">
+    <div class="p-4">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </div>
+  </mat-card>
+} @else if (store.detailError()) {
+  <mat-card class="app-card">
+    <div class="p-4 text-sm text-rose-600">{{ store.detailError() }}</div>
+  </mat-card>
+} @else if (store.currentTrend(); as trend) {
+  <a routerLink="/viral-intelligence" class="mb-3 inline-block text-xs text-slate-500 hover:text-slate-700">
+    ← Back to Viral Intelligence
+  </a>
+
+  <app-page-header
+    [title]="trend.title"
+    [subtitle]="sourceLabels[trend.source] + ' · @' + trend.authorHandle.replace('@', '') + ' · ' + (trend.publishedAt | date)"
+  />
+
+  <p class="mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-700">
+    This is demo content standing in for real platform data — see Discover for why.
+  </p>
+
+  <div class="grid gap-4 lg:grid-cols-3">
+    <mat-card class="app-card lg:col-span-2">
+      <div class="p-4">
+        <div class="mb-3 text-sm font-semibold text-slate-900">Performance</div>
+
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="rounded-lg bg-slate-50 p-3">
+            <div class="text-xs text-slate-500">Views</div>
+            <div class="mt-1 text-lg font-semibold tabular-nums text-slate-900">{{ formatCompactNumber(trend.views) }}</div>
+          </div>
+          <div class="rounded-lg bg-slate-50 p-3">
+            <div class="text-xs text-slate-500">Likes</div>
+            <div class="mt-1 text-lg font-semibold tabular-nums text-slate-900">{{ formatCompactNumber(trend.likes) }}</div>
+          </div>
+          <div class="rounded-lg bg-slate-50 p-3">
+            <div class="text-xs text-slate-500">Shares</div>
+            <div class="mt-1 text-lg font-semibold tabular-nums text-slate-900">{{ formatCompactNumber(trend.shares) }}</div>
+          </div>
+          <div class="rounded-lg bg-slate-50 p-3">
+            <div class="text-xs text-slate-500">Saves</div>
+            <div class="mt-1 text-lg font-semibold tabular-nums text-slate-900">{{ formatCompactNumber(trend.saves) }}</div>
+          </div>
+        </div>
+
+        <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div class="rounded-lg bg-slate-50 p-3">
+            <div class="text-xs text-slate-500">Engagement rate</div>
+            <div class="mt-1 text-sm font-semibold text-slate-900">{{ engagementRate() | number: '1.1-1' }}%</div>
+          </div>
+          <div class="rounded-lg bg-slate-50 p-3">
+            <div class="text-xs text-slate-500">Relative performance</div>
+            <div class="mt-1 text-sm font-semibold text-emerald-700">{{ relativePerformanceLabel() }}</div>
+          </div>
+          <div class="rounded-lg bg-slate-50 p-3">
+            <div class="text-xs text-slate-500">Duration</div>
+            <div class="mt-1 text-sm font-semibold text-slate-900">{{ trend.durationSec }}s</div>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="app-card">
+      <div class="p-4">
+        <div class="mb-1 text-sm font-semibold text-slate-900">Why it's viral</div>
+        <div class="mb-3 text-3xl font-bold tabular-nums text-slate-900">{{ trend.viralScore }}<span class="text-sm font-normal text-slate-400"> / 100</span></div>
+
+        @if (trend.scoreBreakdown; as breakdown) {
+          <div class="space-y-2">
+            @for (component of breakdown.components; track component.key) {
+              <div>
+                <div class="flex items-center justify-between text-xs text-slate-600">
+                  <span>{{ component.label }}</span>
+                  <span class="tabular-nums">{{ (component.normalized * 100) | number: '1.0-0' }}%</span>
+                </div>
+                <div class="mt-1 h-1.5 w-full rounded-full bg-slate-100">
+                  <div
+                    class="h-1.5 rounded-full bg-sky-500"
+                    [style.width.%]="component.normalized * 100"
+                  ></div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="mt-3 rounded-full px-2 py-1 text-center text-xs font-medium text-slate-600" [class.bg-slate-100]="true">
+          {{ statusLabels[trend.status] }}
+        </div>
+      </div>
+    </mat-card>
+  </div>
+
+  <mat-card class="app-card mt-4">
+    <div class="p-4">
+      <div class="mb-1 text-sm font-semibold text-slate-900">Creative pattern</div>
+      @if (trend.pattern; as pattern) {
+        <div class="mt-2 flex flex-wrap gap-2">
+          <span class="rounded-full bg-sky-50 px-2 py-1 text-xs text-sky-700">Format: {{ pattern.format }}</span>
+          <span class="rounded-full bg-violet-50 px-2 py-1 text-xs text-violet-700">Topic: {{ pattern.topic }}</span>
+          <span class="rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700">Emotion: {{ pattern.emotion }}</span>
+          <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">CTA: {{ pattern.ctaType }}</span>
+        </div>
+      } @else {
+        <p class="mt-1 text-sm text-slate-400">Not analyzed yet.</p>
+      }
+    </div>
+  </mat-card>
+
+  <mat-card class="app-card mt-4">
+    <div class="p-4">
+      <div class="mb-1 text-sm font-semibold text-slate-900">Your adaptation</div>
+      <p class="mb-3 text-xs text-slate-500">
+        Reuses this trend's creative pattern to generate an original padel idea — never its wording.
+      </p>
+
+      @if (store.adaptError()) {
+        <p class="mb-3 text-sm text-rose-600">{{ store.adaptError() }}</p>
+      }
+
+      @if (!store.currentAdaptation()) {
+        <button mat-flat-button color="primary" [disabled]="store.adapting()" (click)="adapt()">
+          {{ store.adapting() ? 'Adapting…' : 'Adapt to my account' }}
+        </button>
+        @if (store.adapting()) {
+          <mat-progress-bar mode="indeterminate" class="mt-3"></mat-progress-bar>
+        }
+      } @else {
+        @let adaptation = store.currentAdaptation()!;
+
+        <div class="rounded-lg bg-slate-50 p-3">
+          <div class="text-sm font-semibold text-slate-900">{{ adaptation.payload.title }}</div>
+          <div class="mt-1 text-xs text-slate-500">
+            {{ adaptation.payload.platform }} · {{ adaptation.payload.durationSec }}s
+          </div>
+        </div>
+
+        <div class="mt-3 space-y-3 text-sm">
+          <div>
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Hook</div>
+            <p class="mt-1 text-slate-800">{{ adaptation.payload.hook }}</p>
+          </div>
+          <div>
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Concept</div>
+            <p class="mt-1 text-slate-800">{{ adaptation.payload.concept }}</p>
+          </div>
+
+          @if (adaptation.payload.structure.length > 0) {
+            <div>
+              <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Structure</div>
+              <ol class="mt-1 list-inside list-decimal space-y-0.5 text-slate-800">
+                @for (step of adaptation.payload.structure; track $index) {
+                  <li>{{ step }}</li>
+                }
+              </ol>
+            </div>
+          }
+
+          @if (adaptation.payload.scenes.length > 0) {
+            <div>
+              <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Scenes</div>
+              <ul class="mt-1 list-inside list-disc space-y-0.5 text-slate-800">
+                @for (scene of adaptation.payload.scenes; track $index) {
+                  <li>{{ scene }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <div>
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Script</div>
+            <p class="mt-1 whitespace-pre-line text-slate-800">{{ adaptation.payload.script }}</p>
+          </div>
+          <div>
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Caption</div>
+            <p class="mt-1 text-slate-800">{{ adaptation.payload.caption }}</p>
+          </div>
+          <div>
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-400">CTA</div>
+            <p class="mt-1 text-slate-800">{{ adaptation.payload.cta }}</p>
+          </div>
+          <div class="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-700">
+            <span class="font-medium">Why it should work: </span>{{ adaptation.payload.rationale }}
+          </div>
+        </div>
+
+        @if (store.planError()) {
+          <p class="mt-3 text-sm text-rose-600">{{ store.planError() }}</p>
+        }
+
+        @if (adaptation.plannerItemId) {
+          <div class="mt-4 flex items-center gap-2">
+            <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">Added to Planner</span>
+            <a routerLink="/planner" class="text-xs text-sky-700 hover:underline">View in Planner →</a>
+          </div>
+        } @else {
+          <button mat-flat-button color="primary" class="mt-4" [disabled]="store.planning()" (click)="addToPlanner()">
+            {{ store.planning() ? 'Adding…' : 'Add to Planner' }}
+          </button>
+          @if (store.planning()) {
+            <mat-progress-bar mode="indeterminate" class="mt-3"></mat-progress-bar>
+          }
+        }
+      }
+    </div>
+  </mat-card>
+} @else {
+  <mat-card class="app-card">
+    <div class="p-4 text-sm text-slate-400">Trend not found.</div>
+  </mat-card>
+}

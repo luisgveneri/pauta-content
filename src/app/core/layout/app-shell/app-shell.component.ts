@@ -27,6 +27,7 @@ type NavItem = {
 
 const BASE_NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
+  { label: 'Viral Intelligence', icon: 'local_fire_department', route: '/viral-intelligence' },
   { label: 'Viral Content', icon: 'insights', route: '/content' },
   { label: 'Idea Generator', icon: 'auto_awesome', route: '/ideas' },
   { label: 'Planner', icon: 'event_note', route: '/planner' },

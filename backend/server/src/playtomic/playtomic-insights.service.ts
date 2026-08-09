@@ -3,6 +3,11 @@ import { PrismaService } from '../prisma/prisma.service';
 
 const LOOKBACK_DAYS = 60;
 const CONTENT_IMPACT_WINDOW_DAYS = 2;
+// Segmentation windows — computed purely within the 60-day dataset we
+// actually have, not against history that doesn't exist. See the Player
+// plan for why these specific cutoffs.
+const NEW_WINDOW_DAYS = 14;
+const DORMANT_INACTIVE_DAYS = 30;
 
 function mean(values: number[]): number {
   return values.reduce((sum, v) => sum + v, 0) / values.length;
@@ -26,7 +31,7 @@ export class PlaytomicInsightsService {
     });
 
     if (bookings.length === 0) {
-      return { hasMockData: false, overall: null, bookingsByDay: [], contentImpact: [] };
+      return { hasMockData: false, overall: null, bookingsByDay: [], contentImpact: [], players: null };
     }
 
     const confirmed = bookings.filter((b) => b.status === 'CONFIRMED');
@@ -66,6 +71,52 @@ export class PlaytomicInsightsService {
       };
     });
 
-    return { hasMockData: true, overall, bookingsByDay, contentImpact };
+    const players = await this.getPlayerStats(organizationId, since);
+
+    return { hasMockData: true, overall, bookingsByDay, contentImpact, players };
+  }
+
+  private async getPlayerStats(organizationId: string, since: Date) {
+    const participations = await this.prisma.bookingParticipant.findMany({
+      where: { booking: { organizationId, startAt: { gte: since }, status: 'CONFIRMED' } },
+      select: { playerId: true, booking: { select: { startAt: true } } },
+    });
+
+    const byPlayer = new Map<string, Date[]>();
+    for (const p of participations) {
+      const dates = byPlayer.get(p.playerId) ?? [];
+      dates.push(p.booking.startAt);
+      byPlayer.set(p.playerId, dates);
+    }
+
+    const now = new Date();
+    const newCutoff = new Date(now);
+    newCutoff.setDate(newCutoff.getDate() - NEW_WINDOW_DAYS);
+    const dormantCutoff = new Date(now);
+    dormantCutoff.setDate(dormantCutoff.getDate() - DORMANT_INACTIVE_DAYS);
+
+    let newCount = 0;
+    let recurringCount = 0;
+    let dormantCount = 0;
+
+    for (const dates of byPlayer.values()) {
+      const first = new Date(Math.min(...dates.map((d) => d.getTime())));
+      const last = new Date(Math.max(...dates.map((d) => d.getTime())));
+      const isNew = first >= newCutoff;
+      const isRecurring = dates.length >= 2 && last >= newCutoff;
+      const hadEarlyActivity = first < dormantCutoff;
+      const isDormant = hadEarlyActivity && last < dormantCutoff;
+
+      if (isNew) newCount += 1;
+      if (isRecurring) recurringCount += 1;
+      if (isDormant) dormantCount += 1;
+    }
+
+    return {
+      totalActive: byPlayer.size,
+      newCount,
+      recurringCount,
+      dormantCount,
+    };
   }
 }

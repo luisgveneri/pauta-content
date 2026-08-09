@@ -1,4 +1,10 @@
-import { IsDateString, IsIn, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsDateString,
+  IsIn,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class CreatePlannerItemDto {
   @IsDateString()
@@ -17,4 +23,3 @@ export class CreatePlannerItemDto {
   @IsIn(['Draft', 'Ready', 'Scheduled', 'Posted'])
   status: string;
 }
-

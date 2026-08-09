@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { RouterLink } from '@angular/router';
 import { PlannerStore } from './state/planner.store';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 
@@ -16,6 +17,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.com
     MatButtonToggleModule,
     MatChipsModule,
     DatePipe,
+    RouterLink,
     PageHeaderComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,

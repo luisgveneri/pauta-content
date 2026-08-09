@@ -66,6 +66,16 @@ export const routes: Routes = [
           import('./features/campaigns/campaign-detail.page').then((m) => m.CampaignDetailPage),
       },
       {
+        path: 'viral-intelligence',
+        loadComponent: () =>
+          import('./features/viral-intelligence/viral-intelligence.page').then((m) => m.ViralIntelligencePage),
+      },
+      {
+        path: 'viral-intelligence/:id',
+        loadComponent: () =>
+          import('./features/viral-intelligence/trend-detail.page').then((m) => m.TrendDetailPage),
+      },
+      {
         path: 'playtomic',
         canActivate: [clubOnlyGuard],
         loadComponent: () =>

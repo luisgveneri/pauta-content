@@ -1,8 +1,9 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { RouterLink } from '@angular/router';
 import { LineChartComponent, LineChartPoint } from '../../shared/ui/line-chart/line-chart.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { PlaytomicStore } from './state/playtomic.store';
@@ -16,8 +17,10 @@ import { PlaytomicStore } from './state/playtomic.store';
     MatProgressBarModule,
     PageHeaderComponent,
     LineChartComponent,
+    RouterLink,
     DatePipe,
     CurrencyPipe,
+    DecimalPipe,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './playtomic.page.html',
