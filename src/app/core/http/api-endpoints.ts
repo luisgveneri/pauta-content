@@ -49,6 +49,9 @@ export const apiEndpoints = {
     adapt: (id: string) => `/api/viral-intelligence/trends/${id}/adapt`,
     plan: (adaptationId: string) => `/api/viral-intelligence/adaptations/${adaptationId}/plan`,
     seedMock: '/api/viral-intelligence/mock/seed',
+    monitoredAccounts: '/api/viral-intelligence/monitored-accounts',
+    monitoredAccount: (id: string) => `/api/viral-intelligence/monitored-accounts/${id}`,
+    syncMonitoredAccounts: '/api/viral-intelligence/monitored-accounts/sync',
   },
 } as const;
 

@@ -2,11 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   AccountInsightsResult,
   GraphAccount,
+  GraphBusinessDiscovery,
   GraphMedia,
   GraphPage,
   InsightValue,
   MediaInsightsResult,
 } from './instagram-api.types';
+
+const BUSINESS_DISCOVERY_MEDIA_FIELDS =
+  'media_type,media_product_type,view_count,like_count,comments_count,caption,timestamp,permalink,thumbnail_url';
 
 const UNSUPPORTED_METRIC_SUBCODE = 2108006;
 
@@ -41,14 +45,20 @@ export class InstagramApiService {
     });
   }
 
-  async getAccountInsights(igUserId: string, token: string): Promise<AccountInsightsResult> {
+  async getAccountInsights(
+    igUserId: string,
+    token: string,
+  ): Promise<AccountInsightsResult> {
     try {
-      const res = await this.get<{ data: InsightValue[] }>(`/${igUserId}/insights`, {
-        metric: 'reach,profile_views,accounts_engaged',
-        metric_type: 'total_value',
-        period: 'day',
-        access_token: token,
-      });
+      const res = await this.get<{ data: InsightValue[] }>(
+        `/${igUserId}/insights`,
+        {
+          metric: 'reach,profile_views,accounts_engaged',
+          metric_type: 'total_value',
+          period: 'day',
+          access_token: token,
+        },
+      );
       const byName = this.indexInsightValues(res.data);
       return {
         reach: byName.get('reach') ?? 0,
@@ -56,7 +66,9 @@ export class InstagramApiService {
         accountsEngaged: byName.get('accounts_engaged') ?? 0,
       };
     } catch (error) {
-      this.logger.warn(`No se pudieron obtener insights de cuenta: ${(error as Error).message}`);
+      this.logger.warn(
+        `No se pudieron obtener insights de cuenta: ${(error as Error).message}`,
+      );
       return { reach: 0, profileViews: 0, accountsEngaged: 0 };
     }
   }
@@ -66,7 +78,11 @@ export class InstagramApiService {
    * page stops as soon as a media item older than `since` is seen, so a
    * regular sync only pages through recent content instead of the full history.
    */
-  async listMedia(igUserId: string, token: string, since?: Date): Promise<GraphMedia[]> {
+  async listMedia(
+    igUserId: string,
+    token: string,
+    since?: Date,
+  ): Promise<GraphMedia[]> {
     const results: GraphMedia[] = [];
     let url: string | undefined = this.buildUrl(`/${igUserId}/media`, {
       fields:
@@ -76,7 +92,8 @@ export class InstagramApiService {
     });
 
     while (url) {
-      const page: { data: GraphMedia[]; paging?: { next?: string } } = await this.fetchUrl(url);
+      const page: { data: GraphMedia[]; paging?: { next?: string } } =
+        await this.fetchUrl(url);
       for (const item of page.data) {
         if (since && new Date(item.timestamp) < since) {
           return results;
@@ -93,41 +110,64 @@ export class InstagramApiService {
    * Unsupported-metric errors are treated as non-fatal: we fall back to
    * requesting each metric individually and keep whichever succeed.
    */
-  async getMediaInsights(mediaId: string, mediaType: string, token: string): Promise<MediaInsightsResult> {
+  async getMediaInsights(
+    mediaId: string,
+    mediaType: string,
+    token: string,
+  ): Promise<MediaInsightsResult> {
     const metrics = this.metricsForType(mediaType);
     try {
-      const res = await this.get<{ data: InsightValue[] }>(`/${mediaId}/insights`, {
-        metric: metrics.join(','),
-        access_token: token,
-      });
+      const res = await this.get<{ data: InsightValue[] }>(
+        `/${mediaId}/insights`,
+        {
+          metric: metrics.join(','),
+          access_token: token,
+        },
+      );
       return this.toMediaInsightsResult(res.data);
     } catch (error) {
-      if (error instanceof GraphApiError && error.subcode === UNSUPPORTED_METRIC_SUBCODE) {
+      if (
+        error instanceof GraphApiError &&
+        error.subcode === UNSUPPORTED_METRIC_SUBCODE
+      ) {
         return this.getMediaInsightsPerMetric(mediaId, metrics, token);
       }
-      this.logger.warn(`Insights no disponibles para media ${mediaId}: ${(error as Error).message}`);
+      this.logger.warn(
+        `Insights no disponibles para media ${mediaId}: ${(error as Error).message}`,
+      );
       return this.toMediaInsightsResult([]);
     }
   }
 
   /** First leg of the OAuth code exchange — trades the `code` from the authorize redirect for a short-lived user token. */
-  async exchangeCodeForToken(code: string, redirectUri: string): Promise<{ accessToken: string }> {
-    const res = await this.get<{ access_token: string }>('/oauth/access_token', {
-      client_id: process.env.IG_APP_ID || '',
-      client_secret: process.env.IG_APP_SECRET || '',
-      redirect_uri: redirectUri,
-      code,
-    });
+  async exchangeCodeForToken(
+    code: string,
+    redirectUri: string,
+  ): Promise<{ accessToken: string }> {
+    const res = await this.get<{ access_token: string }>(
+      '/oauth/access_token',
+      {
+        client_id: process.env.IG_APP_ID || '',
+        client_secret: process.env.IG_APP_SECRET || '',
+        redirect_uri: redirectUri,
+        code,
+      },
+    );
     return { accessToken: res.access_token };
   }
 
-  async exchangeForLongLived(shortLivedToken: string): Promise<{ accessToken: string; expiresInSec?: number }> {
-    const res = await this.get<{ access_token: string; expires_in?: number }>('/oauth/access_token', {
-      grant_type: 'fb_exchange_token',
-      client_id: process.env.IG_APP_ID || '',
-      client_secret: process.env.IG_APP_SECRET || '',
-      fb_exchange_token: shortLivedToken,
-    });
+  async exchangeForLongLived(
+    shortLivedToken: string,
+  ): Promise<{ accessToken: string; expiresInSec?: number }> {
+    const res = await this.get<{ access_token: string; expires_in?: number }>(
+      '/oauth/access_token',
+      {
+        grant_type: 'fb_exchange_token',
+        client_id: process.env.IG_APP_ID || '',
+        client_secret: process.env.IG_APP_SECRET || '',
+        fb_exchange_token: shortLivedToken,
+      },
+    );
     return { accessToken: res.access_token, expiresInSec: res.expires_in };
   }
 
@@ -153,6 +193,31 @@ export class InstagramApiService {
     });
   }
 
+  /**
+   * Looks up any public Instagram Business/Creator account by username —
+   * doesn't require that account to have authorized this app. Requires
+   * `igUserId`'s own token to make the call, but the results describe
+   * `targetUsername`, not the caller. Subject to Platform (not Business Use
+   * Case) rate limiting. See docs/viral-intelligence.md for what this
+   * endpoint does and doesn't return (no view_count for non-video media, no
+   * duration for any media type).
+   */
+  async getBusinessDiscovery(
+    igUserId: string,
+    targetUsername: string,
+    token: string,
+    mediaLimit = 12,
+  ): Promise<GraphBusinessDiscovery> {
+    const res = await this.get<{ business_discovery: GraphBusinessDiscovery }>(
+      `/${igUserId}`,
+      {
+        fields: `business_discovery.username(${targetUsername}){followers_count,media_count,username,media.limit(${mediaLimit}){${BUSINESS_DISCOVERY_MEDIA_FIELDS}}}`,
+        access_token: token,
+      },
+    );
+    return res.business_discovery;
+  }
+
   private async getMediaInsightsPerMetric(
     mediaId: string,
     metrics: string[],
@@ -161,10 +226,13 @@ export class InstagramApiService {
     const collected: InsightValue[] = [];
     for (const metric of metrics) {
       try {
-        const res = await this.get<{ data: InsightValue[] }>(`/${mediaId}/insights`, {
-          metric,
-          access_token: token,
-        });
+        const res = await this.get<{ data: InsightValue[] }>(
+          `/${mediaId}/insights`,
+          {
+            metric,
+            access_token: token,
+          },
+        );
         collected.push(...res.data);
       } catch {
         // metric genuinely unsupported for this media item — skip it
@@ -174,7 +242,15 @@ export class InstagramApiService {
   }
 
   private metricsForType(mediaType: string): string[] {
-    const base = ['views', 'reach', 'likes', 'comments', 'shares', 'saved', 'total_interactions'];
+    const base = [
+      'views',
+      'reach',
+      'likes',
+      'comments',
+      'shares',
+      'saved',
+      'total_interactions',
+    ];
     if (mediaType === 'REELS') {
       return [...base, 'ig_reels_avg_watch_time'];
     }
@@ -206,12 +282,17 @@ export class InstagramApiService {
     return map;
   }
 
-  private async get<T>(path: string, query: Record<string, string>): Promise<T> {
+  private async get<T>(
+    path: string,
+    query: Record<string, string>,
+  ): Promise<T> {
     return this.fetchUrl<T>(this.buildUrl(path, query));
   }
 
   private buildUrl(path: string, query: Record<string, string>): string {
-    const url = new URL(path.startsWith('http') ? path : `${this.baseUrl}${path}`);
+    const url = new URL(
+      path.startsWith('http') ? path : `${this.baseUrl}${path}`,
+    );
     for (const [key, value] of Object.entries(query)) {
       url.searchParams.set(key, value);
     }
@@ -223,7 +304,11 @@ export class InstagramApiService {
     const body = await response.json();
     if (!response.ok || body.error) {
       const err = body.error ?? {};
-      throw new GraphApiError(err.message || `Graph API error (${response.status})`, err.code, err.error_subcode);
+      throw new GraphApiError(
+        err.message || `Graph API error (${response.status})`,
+        err.code,
+        err.error_subcode,
+      );
     }
     return body as T;
   }

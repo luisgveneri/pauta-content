@@ -63,7 +63,7 @@ function normalizeDuration(value: unknown, fallback: number): number {
 export function validateAdaptation(
   raw: unknown,
   fallbackPlatform: string,
-  fallbackDurationSec: number,
+  fallbackDurationSec: number | null,
 ): Adaptation {
   const input =
     raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};

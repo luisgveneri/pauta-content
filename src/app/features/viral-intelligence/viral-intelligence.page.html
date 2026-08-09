@@ -98,6 +98,69 @@
         </button>
       </div>
 
+      <mat-card class="app-card mb-4">
+        <div class="p-4">
+          <div class="mb-1 text-sm font-semibold text-slate-900">Monitored Instagram accounts</div>
+          <p class="mb-3 text-xs text-slate-500">
+            Add real public padel/tennis accounts to track — their Reels feed into Discover and For You as real
+            trends, scored the same way as everything else. Uses Business Discovery, which needs at least one
+            healthy connected Instagram account somewhere in the app.
+          </p>
+
+          <div class="flex flex-wrap items-end gap-3">
+            <mat-form-field appearance="outline" class="w-64">
+              <mat-label>Instagram username</mat-label>
+              <input #newAccountInput matInput placeholder="premierpadel" (keydown.enter)="addMonitoredAccount()" />
+            </mat-form-field>
+            <button
+              mat-stroked-button
+              [disabled]="store.addingMonitoredAccount()"
+              (click)="addMonitoredAccount()"
+            >
+              {{ store.addingMonitoredAccount() ? 'Adding…' : 'Add account' }}
+            </button>
+            <span class="flex-1"></span>
+            <button
+              mat-flat-button
+              color="primary"
+              [disabled]="store.syncingRealSources() || store.monitoredAccounts().length === 0"
+              (click)="store.syncRealSources()"
+            >
+              {{ store.syncingRealSources() ? 'Syncing…' : 'Sync real sources' }}
+            </button>
+          </div>
+
+          @if (store.monitoredAccountsError()) {
+            <p class="mt-3 text-sm text-rose-600">{{ store.monitoredAccountsError() }}</p>
+          }
+
+          @if (store.monitoredAccountsLoading()) {
+            <mat-progress-bar mode="indeterminate" class="mt-3"></mat-progress-bar>
+          } @else if (store.monitoredAccounts().length > 0) {
+            <div class="mt-3 flex flex-wrap gap-2">
+              @for (account of store.monitoredAccounts(); track account.id) {
+                <span
+                  class="inline-flex items-center gap-1 rounded-full bg-slate-100 py-1 pl-3 pr-1 text-xs text-slate-700"
+                  [class.bg-rose-50]="!!account.lastSyncError"
+                  [class.text-rose-700]="!!account.lastSyncError"
+                  [title]="account.lastSyncError ?? (account.lastSyncedAt ? 'Last synced ' + (account.lastSyncedAt | date: 'medium') : 'Not synced yet')"
+                >
+                  &#64;{{ account.username }}
+                  <button
+                    type="button"
+                    class="grid h-5 w-5 place-items-center rounded-full hover:bg-black/10"
+                    aria-label="Stop monitoring"
+                    (click)="store.removeMonitoredAccount(account.id)"
+                  >
+                    <mat-icon class="!text-[14px]">close</mat-icon>
+                  </button>
+                </span>
+              }
+            </div>
+          }
+        </div>
+      </mat-card>
+
       @if (store.error()) {
         <mat-card class="app-card mb-4">
           <div class="p-4 text-sm text-rose-600">{{ store.error() }}</div>

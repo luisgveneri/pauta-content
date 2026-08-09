@@ -18,7 +18,7 @@ export type RawTrend = {
   title: string;
   caption?: string;
   hashtags: string[];
-  durationSec: number;
+  durationSec?: number; // absent when the source doesn't expose it (e.g. Instagram Business Discovery)
   thumbnailUrl?: string;
   publishedAt: Date;
 
@@ -48,6 +48,10 @@ export type TrendDiscoveryQuery = {
 export interface TrendSourceProvider {
   readonly id: string;
   readonly isAvailable: boolean;
+  // Lets TrendDiscoveryService offer separate "refresh demo data" and "sync
+  // real sources" actions instead of one button that mixes both — matters
+  // because they have very different costs, triggers, and honesty implications.
+  readonly isDemoSource: boolean;
   discover(query: TrendDiscoveryQuery): Promise<RawTrend[]>;
 }
 

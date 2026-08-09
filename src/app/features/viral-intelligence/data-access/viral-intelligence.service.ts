@@ -2,7 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client.service';
 import { apiEndpoints } from '../../../core/http/api-endpoints';
-import { PlanAdaptationDto, RecommendationsResponse, Trend, TrendAdaptation, TrendFilters } from '../domain/trend.model';
+import {
+  MonitoredAccount,
+  PlanAdaptationDto,
+  RecommendationsResponse,
+  Trend,
+  TrendAdaptation,
+  TrendFilters,
+} from '../domain/trend.model';
 
 @Injectable({ providedIn: 'root' })
 export class ViralIntelligenceService {
@@ -48,5 +55,27 @@ export class ViralIntelligenceService {
 
   clearMockData(): Promise<{ deleted: number }> {
     return firstValueFrom(this.api.delete<{ deleted: number }>(apiEndpoints.viralIntelligence.seedMock));
+  }
+
+  listMonitoredAccounts(): Promise<MonitoredAccount[]> {
+    return firstValueFrom(this.api.get<MonitoredAccount[]>(apiEndpoints.viralIntelligence.monitoredAccounts));
+  }
+
+  addMonitoredAccount(username: string): Promise<MonitoredAccount> {
+    return firstValueFrom(
+      this.api.post<MonitoredAccount>(apiEndpoints.viralIntelligence.monitoredAccounts, { username }),
+    );
+  }
+
+  removeMonitoredAccount(id: string): Promise<{ removed: boolean }> {
+    return firstValueFrom(
+      this.api.delete<{ removed: boolean }>(apiEndpoints.viralIntelligence.monitoredAccount(id)),
+    );
+  }
+
+  syncMonitoredAccounts(): Promise<{ discovered: number }> {
+    return firstValueFrom(
+      this.api.post<{ discovered: number }>(apiEndpoints.viralIntelligence.syncMonitoredAccounts, {}),
+    );
   }
 }

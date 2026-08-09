@@ -9,6 +9,17 @@ export type GraphMedia = {
   timestamp: string;
   like_count?: number;
   comments_count?: number;
+  // Only ever populated on VIDEO/REELS media returned via Business
+  // Discovery — never present for other accounts' IMAGE/CAROUSEL posts.
+  view_count?: number;
+};
+
+export type GraphBusinessDiscovery = {
+  id: string;
+  username: string;
+  followers_count: number;
+  media_count: number;
+  media?: { data: GraphMedia[] };
 };
 
 export type GraphAccount = {
@@ -19,7 +30,11 @@ export type GraphAccount = {
   media_count: number;
 };
 
-export type InsightValue = { name: string; period: string; values: Array<{ value: number }> };
+export type InsightValue = {
+  name: string;
+  period: string;
+  values: Array<{ value: number }>;
+};
 
 export type AccountInsightsResult = {
   reach: number;

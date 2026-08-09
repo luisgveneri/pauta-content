@@ -17,17 +17,25 @@ export class TrendDiscoveryService {
     private readonly providers: TrendSourceProvider[],
   ) {}
 
-  /**
-   * Runs every available provider and upserts each result, scored on the
-   * way in. Explicitly triggered (POST /mock/seed today, a scheduled call
-   * once a real source and a scheduler both exist) rather than running on
-   * every request — see the plan's async-pipeline and AI-cost-control notes.
-   */
-  async seed(): Promise<{ discovered: number }> {
+  /** Runs only the demo provider — tied to the "Refresh demo data" action, never mixed with real sources. */
+  async seedMockData(): Promise<{ discovered: number }> {
+    return this.runProviders((p) => p.isDemoSource);
+  }
+
+  /** Runs every real (non-demo) source — tied to "Sync real sources", explicitly triggered like every other pipeline stage in this module. */
+  async syncRealSources(): Promise<{ discovered: number }> {
+    return this.runProviders((p) => !p.isDemoSource);
+  }
+
+  private async runProviders(
+    matches: (p: TrendSourceProvider) => boolean,
+  ): Promise<{ discovered: number }> {
     let discovered = 0;
     const now = new Date();
 
-    for (const provider of this.providers.filter((p) => p.isAvailable)) {
+    for (const provider of this.providers.filter(
+      (p) => p.isAvailable && matches(p),
+    )) {
       const rawTrends = await provider.discover({});
       for (const raw of rawTrends) {
         await this.upsert(raw, now);

@@ -49,18 +49,48 @@ interface TrendSourceProvider {
 
 `RawTrend` is platform-neutral — no field exists that only one platform could fill; a provider that can't supply a value (e.g. no median-views baseline) sends `null`, never a guess. `TrendDiscoveryService` iterates every provider where `isAvailable` is true and upserts on `(source, externalId)`, so re-running discovery updates existing rows instead of duplicating them.
 
-**Why there's only a mock provider today:** verified before building anything —
+**What's real vs. still blocked** — verified against the live Graph API with a real connected account, not assumed from docs:
 - **TikTok**: the Research API is restricted to verified academic/public-interest institutions; commercial use is explicitly ineligible. The Display API only returns the authenticated user's own videos. No commercial path to trend discovery exists.
-- **Instagram**: hashtag search caps at 30 unique hashtags per rolling 7 days, there's no public hashtag-search endpoint, no cross-account analytics, and Meta stripped view counts from single post/reel lookups in 2026.
-- **YouTube**: `search.list` + `videos.list` + `channels.list` genuinely work, including `subscriberCount` — the baseline relative performance needs. Quota-limited (10,000 units/day, ~100 searches/day) but workable with caching. This is the recommended first real provider (Phase 4), not TikTok.
+- **Instagram Hashtag Search** (broad discovery by topic/hashtag): confirmed blocked — `(#10) To use 'Instagram Public Content Access', your use of this endpoint must be reviewed and approved by Facebook.` Needs Meta App Review before it can ship.
+- **Instagram Business Discovery** (look up a *known* public Business/Creator account by username): confirmed **working today**, no extra review needed beyond the app's existing setup. This is `InstagramTrendProvider` (`providers/instagram-trend.provider.ts`) — real, shipped, not a demo. See "Monitored accounts" below.
+- **YouTube**: `search.list` + `videos.list` + `channels.list` genuinely work, including `subscriberCount`. Quota-limited (10,000 units/day, ~100 searches/day) but workable with caching. Still the next real source to add — not implemented yet.
 
 Scraping was deliberately not implemented — it violates platform ToS, breaks without warning, and would poison the data every scoring/recommendation decision depends on.
 
 ### Adding a real provider
 
-1. Implement `TrendSourceProvider` (e.g. `youtube-trend.provider.ts`), returning `RawTrend[]` with `isDemo: false`.
+1. Implement `TrendSourceProvider` (e.g. `youtube-trend.provider.ts`), returning `RawTrend[]` with `isDemo: false` and `isDemoSource: false`.
 2. Add it to the factory array in `viral-intelligence.module.ts` (`TREND_SOURCE_PROVIDERS`).
 3. Nothing else changes — scoring, patterns, recommendations, and adaptation all operate on `Trend` rows regardless of source.
+
+## Monitored Instagram accounts (`MonitoredAccountsService`, `InstagramTrendProvider`)
+
+Business Discovery isn't a search — it only looks up an account you already know the handle of. So real Instagram discovery here is watchlist-driven, not query-driven: each organization curates a list of real padel/tennis/racquet-sport accounts worth tracking (Discover tab → "Monitored Instagram accounts" panel), and `InstagramTrendProvider` pulls their recent Reels on demand.
+
+**Org-scoped input, global output.** `MonitoredInstagramAccount` rows belong to whichever org added them — each org manages its own watchlist. But the `Trend` rows the sync produces are global, same as every other source (a real Reel is the same fact for everyone). If any org watches `@premierpadel`, that account's Reels become discoverable trends for every org. `MonitoredAccountsService.listDistinctUsernames()` dedupes across orgs before hitting the API, so watching the same account from two orgs costs one API call, not two.
+
+**How the sync works** (`InstagramTrendProvider.discover()`):
+1. Picks *any* healthy connected `InstagramAccount` (`needsReconnect: false`) to make the calls as — Business Discovery's results describe the target account, not the caller, so whose token it is doesn't matter.
+2. Calls `InstagramApiService.getBusinessDiscovery()` once per distinct monitored username, fetching `followers_count`, `media_count`, and up to 12 recent media items.
+3. Keeps only `media_type: VIDEO` (Reels) — the whole product (durationSec, editing style, pacing, script adaptation) is a short-form-video concept, and images/carousels don't get `view_count` from this endpoint anyway.
+4. Computes `authorMedianViews` as the median `view_count` across that account's own fetched Reels — a real, account-specific baseline, not a guess.
+5. Records `lastSyncedAt` / `lastSyncError` per monitored account so a bad username or a private/personal account fails loudly for that one row without blocking the rest of the sync.
+
+**What Business Discovery does and doesn't give you** (confirmed empirically, not assumed):
+- ✅ `view_count` for Reels, `like_count`, `comments_count`, `caption`, `timestamp`, `permalink`, `thumbnail_url`, `followers_count`.
+- ❌ No `shares` or `saves` for accounts you don't own — Instagram treats those as private engagement data. Left at `0`, never guessed; the amplification scoring component simply contributes nothing for these trends instead of inventing a number.
+- ❌ No video `duration` for any account, owned or not — `Trend.durationSec` is nullable specifically because of this; the UI shows "Unknown" instead of a fabricated length.
+- ❌ No `username` field on Hashtag Search results, but that's moot here since Hashtag Search itself isn't approved.
+
+**API surface:**
+```
+GET    /monitored-accounts          List the current org's watchlist
+POST   /monitored-accounts          { username } — add one (upsert-safe, 409 on duplicate)
+DELETE /monitored-accounts/:id
+POST   /monitored-accounts/sync     Runs InstagramTrendProvider for every org's distinct watchlist
+```
+
+`POST /mock/seed` and `POST /monitored-accounts/sync` are deliberately separate actions (`TrendSourceProvider.isDemoSource` is what `TrendDiscoveryService.seedMockData()` vs `.syncRealSources()` filter on) — demo and real data should never be one button that mixes both.
 
 ## AI (reuses the existing multi-provider chain — no second AI system)
 
@@ -140,7 +170,7 @@ so that a naive views-sorted feed and the actual relative-performance-sorted ran
 
 ## Known limitations (honest, not hidden)
 
-- **No real discovery source is connected.** Everything is demo data until a YouTube provider (or another legitimate source) lands per Phase 4.
+- **Real Instagram data is watchlist-driven, not open discovery.** `InstagramTrendProvider` only pulls accounts an org has explicitly added — there's no way to discover *new* accounts automatically until Hashtag Search is approved (or a YouTube provider lands). The demo (mock) catalogue still exists side by side for exploring the product without a watchlist.
 - **No trend lifecycle engine.** `status` is a one-time classification at discovery, not tracked transitions over time (needs periodic re-scoring via snapshots, Phase 4).
 - **No feedback loop yet.** `PlannerItem → InstagramPost` isn't linked, so "trends Pauta recommended performed +X%" isn't measurable yet — the data model (`TrendAdaptation.plannerItemId`) is ready for it, Phase 5 work.
 - **No queue/scheduler infrastructure exists in this codebase** (no BullMQ, no `@nestjs/schedule`), so every pipeline stage is an explicitly-triggered endpoint rather than a background job. Deliberate — introducing one wasn't justified for the MVP's actual load, per the approved plan.

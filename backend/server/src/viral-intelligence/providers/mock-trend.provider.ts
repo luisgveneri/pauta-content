@@ -27,6 +27,7 @@ function urlFor(source: string, handle: string, externalId: string): string {
 export class MockTrendProvider implements TrendSourceProvider {
   readonly id = 'mock';
   readonly isAvailable = true;
+  readonly isDemoSource = true;
 
   discover(query: TrendDiscoveryQuery): Promise<RawTrend[]> {
     const limit = query.limit ?? MOCK_TREND_SEED.length;

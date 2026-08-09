@@ -49,7 +49,7 @@ export type TrendSummaryForPatternExtraction = {
   title: string;
   caption: string | null;
   hashtags: string[];
-  durationSec: number;
+  durationSec: number | null;
   viralScore: number;
   relativePerformance: number | null;
 };
@@ -384,7 +384,7 @@ Do not include any markdown formatting, just the raw JSON.`;
    * or displaying it — this method only talks to the model.
    */
   async adaptTrendForOrganization(
-    trend: { title: string; durationSec: number },
+    trend: { title: string; durationSec: number | null },
     pattern: CreativePatternSummary,
     context: AdaptationOrganizationContext,
   ): Promise<{ payload: Record<string, unknown>; model: string }> {

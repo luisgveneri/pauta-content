@@ -10,8 +10,10 @@ import {
 import { OrganizationType } from '@prisma/client';
 import { CurrentOrg, CurrentOrgType } from '../auth/current-org.decorator';
 import { AdaptationService } from './adaptation.service';
+import { AddMonitoredAccountDto } from './dto/add-monitored-account.dto';
 import { ListTrendsDto } from './dto/list-trends.dto';
 import { PlanAdaptationDto } from './dto/plan-adaptation.dto';
+import { MonitoredAccountsService } from './monitored-accounts.service';
 import { RecommendationService } from './recommendation.service';
 import { SavedTrendsService } from './saved-trends.service';
 import { TrendDiscoveryService } from './trend-discovery.service';
@@ -27,6 +29,7 @@ export class ViralIntelligenceController {
     private readonly recommendations: RecommendationService,
     private readonly saved: SavedTrendsService,
     private readonly adaptation: AdaptationService,
+    private readonly monitoredAccounts: MonitoredAccountsService,
   ) {}
 
   @Get('trends')
@@ -90,11 +93,37 @@ export class ViralIntelligenceController {
 
   @Post('mock/seed')
   seedMockData() {
-    return this.discovery.seed();
+    return this.discovery.seedMockData();
   }
 
   @Delete('mock/seed')
   clearMockData() {
     return this.discovery.clear();
+  }
+
+  @Get('monitored-accounts')
+  listMonitoredAccounts(@CurrentOrg() organizationId: string) {
+    return this.monitoredAccounts.list(organizationId);
+  }
+
+  @Post('monitored-accounts')
+  addMonitoredAccount(
+    @CurrentOrg() organizationId: string,
+    @Body() dto: AddMonitoredAccountDto,
+  ) {
+    return this.monitoredAccounts.add(organizationId, dto.username);
+  }
+
+  @Delete('monitored-accounts/:id')
+  removeMonitoredAccount(
+    @CurrentOrg() organizationId: string,
+    @Param('id') id: string,
+  ) {
+    return this.monitoredAccounts.remove(organizationId, id);
+  }
+
+  @Post('monitored-accounts/sync')
+  syncMonitoredAccounts() {
+    return this.discovery.syncRealSources();
   }
 }

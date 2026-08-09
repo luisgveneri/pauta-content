@@ -41,7 +41,7 @@ export type Trend = {
   title: string;
   caption: string | null;
   hashtags: string[];
-  durationSec: number;
+  durationSec: number | null;
   thumbnailUrl: string | null;
   publishedAt: string;
 
@@ -137,4 +137,13 @@ export type PlanAdaptationDto = {
   title?: string;
   platform?: string;
   status?: string;
+};
+
+export type MonitoredAccount = {
+  id: string;
+  organizationId: string;
+  username: string;
+  lastSyncedAt: string | null;
+  lastSyncError: string | null;
+  createdAt: string;
 };

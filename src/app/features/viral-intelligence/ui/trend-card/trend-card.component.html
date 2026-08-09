@@ -33,7 +33,9 @@
     @if (trend().pattern; as pattern) {
       <span class="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700">{{ pattern.format }}</span>
     }
-    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{{ trend().durationSec }}s</span>
+    @if (trend().durationSec !== null) {
+      <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{{ trend().durationSec }}s</span>
+    }
     <span class="rounded-full px-2 py-0.5 text-xs" [class]="statusClass()">{{ statusLabel() }}</span>
   </div>
 

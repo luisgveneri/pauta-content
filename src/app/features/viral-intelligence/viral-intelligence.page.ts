@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
@@ -29,6 +31,8 @@ const SORT_LABELS: Record<TrendSortOption, string> = {
     MatInputModule,
     MatProgressBarModule,
     MatTabsModule,
+    MatIconModule,
+    DatePipe,
     PageHeaderComponent,
     TrendCardComponent,
     RecommendationCardComponent,
@@ -49,6 +53,8 @@ export class ViralIntelligencePage {
   // lists loaded eagerly so bookmark state is consistent across tabs from the start.
   private discoverLoaded = false;
 
+  private readonly newAccountInput = viewChild<ElementRef<HTMLInputElement>>('newAccountInput');
+
   constructor() {
     void this.store.loadRecommendations();
     void this.store.loadSaved();
@@ -58,7 +64,16 @@ export class ViralIntelligencePage {
     if (event.index === 1 && !this.discoverLoaded) {
       this.discoverLoaded = true;
       void this.store.loadTrends();
+      void this.store.loadMonitoredAccounts();
     }
+  }
+
+  protected addMonitoredAccount() {
+    const input = this.newAccountInput()?.nativeElement;
+    const username = input?.value.trim();
+    if (!username) return;
+    void this.store.addMonitoredAccount(username);
+    if (input) input.value = '';
   }
 
   protected setSource(source: TrendSource | 'ALL') {

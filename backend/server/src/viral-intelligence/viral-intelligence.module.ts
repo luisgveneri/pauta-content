@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { AiModule } from '../ai/ai.module';
+import { InstagramApiService } from '../instagram/instagram-api.service';
 import { PerformanceService } from '../instagram/performance.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AdaptationService } from './adaptation.service';
+import { MonitoredAccountsService } from './monitored-accounts.service';
+import { InstagramTrendProvider } from './providers/instagram-trend.provider';
 import { MockTrendProvider } from './providers/mock-trend.provider';
 import {
   TREND_SOURCE_PROVIDERS,
@@ -27,14 +30,20 @@ import { ViralIntelligenceController } from './viral-intelligence.controller';
     RecommendationService,
     SavedTrendsService,
     AdaptationService,
+    MonitoredAccountsService,
     // Stateless and dependency-free, same as reusing a pure util — no need
     // to route it through InstagramModule's exports for one class.
     PerformanceService,
+    InstagramApiService,
     MockTrendProvider,
+    InstagramTrendProvider,
     {
       provide: TREND_SOURCE_PROVIDERS,
-      useFactory: (mock: MockTrendProvider): TrendSourceProvider[] => [mock],
-      inject: [MockTrendProvider],
+      useFactory: (
+        mock: MockTrendProvider,
+        instagram: InstagramTrendProvider,
+      ): TrendSourceProvider[] => [mock, instagram],
+      inject: [MockTrendProvider, InstagramTrendProvider],
     },
   ],
 })
